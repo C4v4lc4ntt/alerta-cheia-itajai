@@ -27,7 +27,8 @@ void main() {
     // Regra combinada: ATINGIR a cota já muda o estágio (comparação "≥").
     final casos = <double, EstagioAlerta>{
       // Abaixo da Atenção → Monitoramento
-      -0.20: EstagioAlerta.monitoramento, // nível negativo existe em algumas réguas
+      -0.20: EstagioAlerta
+          .monitoramento, // nível negativo existe em algumas réguas
       0.90: EstagioAlerta.monitoramento, // leitura real de 16/10/2026 08:00
       1.20: EstagioAlerta.monitoramento, // 1 cm abaixo da cota de Atenção
       // Limite da Atenção (1,21 m)
