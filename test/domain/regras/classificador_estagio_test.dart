@@ -74,4 +74,16 @@ void main() {
       );
     });
   });
+
+  // Teste do toString(), que entrou na refatoração sem teste e deixou a
+  // cobertura da lógica em 78,9% (abaixo dos 80% exigidos pelo CI).
+  // Ele garante que as cotas aparecem de forma legível em logs e mensagens.
+  group('CotasEstacao — toString', () {
+    test('mostra as três cotas de forma legível', () {
+      expect(
+        cotasDc01.toString(),
+        'CotasEstacao(atenção: 1.21, alerta: 1.61, emergência: 1.75)',
+      );
+    });
+  });
 }
