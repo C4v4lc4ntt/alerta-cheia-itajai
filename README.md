@@ -1,6 +1,6 @@
 # Alerta Cheia Itajaí
 
-[![CI](https://github.com/SEU_USUARIO/alerta-cheia-itajai/actions/workflows/ci.yml/badge.svg)](https://github.com/SEU_USUARIO/alerta-cheia-itajai/actions/workflows/ci.yml)
+[![CI](https://github.com/C4v4lc4ntt/alerta-cheia-itajai/actions/workflows/ci.yml/badge.svg)](https://github.com/C4v4lc4ntt/alerta-cheia-itajai/actions/workflows/ci.yml)
 ![Flutter](https://img.shields.io/badge/Flutter-Android%20%7C%20iOS-0A5C73)
 ![TDD](https://img.shields.io/badge/desenvolvido%20com-TDD-1E6B45)
 
