@@ -1,0 +1,46 @@
+# ==============================================================================
+# .gitignore — arquivos que o Git NUNCA deve enviar para o GitHub.
+# ==============================================================================
+
+# ---------- SEGREDOS (Firebase e afins) — NUNCA subir --------------------------
+# Gerados pelo "flutterfire configure". No CI eles virão dos GitHub Secrets.
+google-services.json
+GoogleService-Info.plist
+lib/firebase_options.dart
+firebase_app_id_file.json
+.firebaserc
+.env
+.env.*
+*.keystore
+*.jks
+key.properties
+
+# ---------- Gerados pelo Flutter/Dart ------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+*.lock.bak
+
+# ---------- Editores / sistema --------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.history/
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+
+# ---------- Símbolos e builds de release ----------------------------------------
+app.*.symbols
+app.*.map.json
+/android/app/debug
+/android/app/profile
+/android/app/release
