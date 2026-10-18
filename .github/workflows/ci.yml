@@ -71,14 +71,14 @@ jobs:
           name: cobertura-lcov
           path: coverage/lcov.info
 
-      # 9) [ATIVADO NO RF01] Exige no mínimo 80% de cobertura na LÓGICA
-      #    (lib/domain e lib/data). Fica comentado até existir lógica para medir.
-      # - name: Exigir 80% de cobertura na lógica
-      #   uses: VeryGoodOpenSource/very_good_coverage@v3
-      #   with:
-      #     path: coverage/lcov.info
-      #     min_coverage: 80
-      #     exclude: 'lib/main.dart lib/app.dart lib/core/** lib/ui/**'
+      # 9) Exige no mínimo 80% de cobertura na LÓGICA (lib/domain e lib/data).
+      #    Telas, tema e main ficam fora da conta (são cobertos por testes de widget).
+      - name: Exigir 80% de cobertura na lógica
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: coverage/lcov.info
+          min_coverage: 80
+          exclude: 'lib/main.dart lib/app.dart lib/core/** lib/ui/**'
 
   # ----------------------------------------------------------------------------
   # JOB 2 — compila para Android (Linux). Só depois que os testes passarem.
