@@ -37,11 +37,14 @@ jobs:
       - name: Baixar o código
         uses: actions/checkout@v4
 
-      # 2) Instala o Flutter (canal estável) e guarda em cache para a próxima vez.
+      # 2) Instala o Flutter na MESMA versão do PC (3.47.7) e guarda em cache.
+      #    Versão fixa: uma atualização do Flutter não reprova o CI de surpresa.
+      #    Para atualizar: "flutter upgrade" no PC e troque o número nos 3 jobs.
       - name: Instalar Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.47.7'
           cache: true
 
       # 3) Mostra a versão instalada (útil para depurar diferenças com o seu PC).
@@ -97,6 +100,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.47.7'
           cache: true
       - run: flutter pub get
       - name: Gerar APK de debug
@@ -117,6 +121,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.47.7'
           cache: true
       - run: flutter pub get
       - name: Compilar iOS sem assinatura
