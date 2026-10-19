@@ -2,9 +2,8 @@
 // classificador_estagio_test.dart — RF01: "dado um nível, retorna o estágio
 // correto, incluindo os valores-limite".
 //
-// ETAPA VERMELHA DO TDD: este teste é escrito ANTES do código. Ao rodar
-// "flutter test" agora, ele DEVE falhar, porque os arquivos importados abaixo
-// ainda não existem.
+// Teste escrito ANTES do código: ciclo vermelho → verde → refatorar do PR #1
+// (commits test(rf01) → feat(rf01) → refactor(rf01)).
 //
 // Cotas usadas: catálogo oficial da Defesa Civil de Itajaí (consulta em
 // 16/10/2026), estações DC-01 e DC-07.

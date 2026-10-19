@@ -16,10 +16,10 @@ Em Itajaí a informação sobre cheias está espalhada: o SMS 40199 e o cell bro
 
 | # | Funcionalidade | Status |
 |---|---|---|
-| RF01 | Estágio de alerta, nível do rio e da maré, com horário da última atualização | 🔜 Sprint 2 |
-| RF02 | Escolha de bairros e notificação quando o estágio **muda** (ou só a partir de Alerta) | 🔜 Sprint 2 |
-| RF03 | Marcar ponto de alagamento (local, altura da água, foto opcional), sem identificação | 🔜 Sprint 3 |
-| RF04 | Mapa dos pontos ativos (somem 6 h após a última confirmação ou com 3 "já baixou") | 🔜 Sprint 3 |
+| RF01 | Estágio de alerta, nível do rio e da maré, com horário da última atualização | 🚧 Em andamento |
+| RF02 | Escolha de bairros e notificação quando o estágio **muda** | 🔜 Sprint 2 |
+| RF03 | Marcar ponto de alagamento (local e altura da água), sem identificação | 🔜 Sprint 3 |
+| RF04 | Mapa dos pontos ativos (somem 6 h após a criação ou com 3 "já baixou") | 🔜 Sprint 3 |
 | RF05 | Abrigos e contatos de emergência com ligação em um toque | 🔜 Sprint 4 |
 | RF06 | Orientações antes/durante/depois e aviso de "enchente sem chuva" | 🔜 Sprint 4 |
 
@@ -49,7 +49,7 @@ O CI (GitHub Actions) roda formatação, análise estática e todos os testes a 
 
 ## Stack
 
-Flutter/Dart · flutter_test · integration_test · mocktail · Firebase (Firestore e Cloud Messaging, plano gratuito) · flutter_map + OpenStreetMap · GitHub Actions
+Flutter/Dart · flutter_test · integration_test · mocktail · Firebase Firestore (plano gratuito) · notificações locais · flutter_map + OpenStreetMap · GitHub Actions
 
 ## Como rodar
 
@@ -68,6 +68,6 @@ flutter run            # abre no emulador ou celular conectado
 
 Projeto de extensão do curso de Análise e Desenvolvimento de Sistemas da UNIVALI (Itajaí/SC), na disciplina "Planejamento e desenvolvimento de um projeto orientado a testes com programação mobile".
 
-**Equipe:** _nome — papel no Scrum_ · _nome — papel_ · _nome — papel_
+**Equipe:** Caleb Maurilio Natividade — Product Owner · Matheus Almeida Cavalcante da Silva — Scrum Master e desenvolvimento · Drenick Alves Feitosa — Time de desenvolvimento
 
 Gestão do projeto: quadro Scrum no Trello, em sprints de 2 a 5.
