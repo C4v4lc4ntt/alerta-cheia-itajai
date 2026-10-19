@@ -19,6 +19,7 @@ Decisões que mudam ou detalham os requisitos do relatório da Etapa 1. Cada uma
 **Decisão:** cada **"Ainda alagado"** renova o prazo, e o ponto passa a sumir **6 horas depois da última confirmação**, e não 6 horas depois de criado. Com **3 "Já baixou"**, o ponto some na hora.
 **Por quê:** se a rua continua alagada, o ponto não deve desaparecer do mapa.
 **Testes (RF04):** ponto sem confirmação expira em 6 h; confirmação às 2 h leva a expiração para 8 h; ponto com 3 contestações fica inativo mesmo dentro do prazo.
+**Situação:** adiada pela D06. No MVP, o ponto expira 6 h depois de criado.
 
 ## D04 · Opção "Só a partir de Alerta" nos avisos (16/10/2026)
 **Contexto:** o mockup da tela "Bairros e avisos" oferece dois modos de aviso. O RF02 previa só "avisar quando o estágio mudar".
@@ -28,8 +29,19 @@ Decisões que mudam ou detalham os requisitos do relatório da Etapa 1. Cada uma
 
 **Por quê:** custa só um parâmetro na mesma regra de notificação e reduz avisos para quem preferir.
 **Testes (RF02):** no modo "só a partir de Alerta", a mudança Monitoramento → Atenção não notifica e a mudança Atenção → Alerta notifica.
+**Situação:** adiada pela D06. No MVP, só o modo "O estágio mudar".
 
 ## D05 · Rótulo curto na barra de estágios (16/10/2026)
 **Contexto:** "Monitoramento" não cabe no espaço de cada etapa da barra da tela Início.
 **Decisão:** usar **"Monitor."** só na barra. O título grande e o leitor de tela continuam com "Monitoramento" por extenso.
 **Por quê:** legibilidade sem perder acessibilidade.
+
+## D06 · Escopo do MVP para uma pessoa (19/10/2026)
+**Contexto:** o desenvolvimento ficou com um só integrante, e o plano gratuito do Firebase não envia push sem servidor (Cloud Functions) nem guarda fotos sem o Cloud Storage.
+**Decisão:**
+- **RF02:** notificação **local**, gerada pelo próprio app quando o estágio muda. O modo "Só a partir de Alerta" (D04) fica para depois.
+- **RF03:** sem foto (o requisito já a tratava como opcional).
+- **RF04:** o ponto expira **6 h depois de criado**; com 3 "Já baixou" some na hora. A renovação por "Ainda alagado" (D03) fica para depois.
+
+**Por quê:** garantir os seis requisitos funcionando, com TDD e validação com moradores, até 05/12/2026.
+**Testes:** RF02 — mudança de estágio gera notificação local, mesmo estágio não gera; RF04 — ponto com mais de 6 h desde a criação fica inativo, e ponto com 3 contestações fica inativo mesmo dentro do prazo.
