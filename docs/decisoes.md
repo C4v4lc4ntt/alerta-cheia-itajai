@@ -45,3 +45,24 @@ Decisões que mudam ou detalham os requisitos do relatório da Etapa 1. Cada uma
 
 **Por quê:** garantir os seis requisitos funcionando, com TDD e validação com moradores, até 05/12/2026.
 **Testes:** RF02 — mudança de estágio gera notificação local, mesmo estágio não gera; RF04 — ponto com mais de 6 h desde a criação fica inativo, e ponto com 3 contestações fica inativo mesmo dentro do prazo.
+
+
+## D07 · Dados reais do portal da Defesa Civil (19/10/2026)
+**Contexto:** o relatório previa um serviço simulado no MVP. A página "Nível dos Rios"
+do portal de monitoramento da Defesa Civil de Itajaí é alimentada por um arquivo
+público de dados (`/data/current/app.json`) com, para cada estação, o nível, o horário
+da medição e as cotas de Atenção, Alerta e Emergência.
+**Decisão:**
+- O app busca os níveis e as cotas nesse arquivo público, por trás da interface
+  `NivelRioServico` (implementação "Defesa Civil").
+- O serviço simulado continua: é usado nos testes e para demonstrar cenários de cheia.
+- Os testes nunca acessam a internet. A leitura do arquivo é testada com uma cópia
+  salva, com a data registrada.
+- `docs/catalogo-estacoes.md` é a referência dos testes e a reserva offline.
+- O código da estação segue o portal, sem hífen (`DC01`), e é a chave que liga
+  leituras, cotas e bairros, sem nenhuma conversão no caminho.
+- Se a busca falhar, o app mostra a última leitura salva com o horário dela.
+- O pacote de acesso à rede será justificado e confirmado no ciclo em que for usado.
+- A autorização para consumir esses dados será pedida à Defesa Civil (passo 17).
+**Por quê:** a validação com moradores fica mais convincente com o rio de verdade, e
+as cotas acompanham a fonte oficial em vez de ficarem fixas no código.
