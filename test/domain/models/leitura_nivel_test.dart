@@ -15,8 +15,11 @@ void main() {
 
   group('LeituraNivel', () {
     test('guarda código da estação, nível e horário da medição', () {
-      final leitura =
-          LeituraNivel(codigoEstacao: 'DC01', nivel: 1.45, medidoEm: medidoEm);
+      final leitura = LeituraNivel(
+        codigoEstacao: 'DC01',
+        nivel: 1.45,
+        medidoEm: medidoEm,
+      );
 
       expect(leitura.codigoEstacao, 'DC01');
       expect(leitura.nivel, 1.45);
@@ -26,24 +29,38 @@ void main() {
     // Em double, 1.2 + 0.41 = 1.6099999999999999 (fica abaixo de 1.61).
     test('arredonda o nível para centímetros', () {
       final leitura = LeituraNivel(
-          codigoEstacao: 'DC01', nivel: 1.2 + 0.41, medidoEm: medidoEm);
+        codigoEstacao: 'DC01',
+        nivel: 1.2 + 0.41,
+        medidoEm: medidoEm,
+      );
 
       expect(leitura.nivel, 1.61);
     });
 
-    test('com o arredondamento, 1.2 + 0.41 dá Alerta na DC01, e não Atenção',
-        () {
-      final leitura = LeituraNivel(
-          codigoEstacao: 'DC01', nivel: 1.2 + 0.41, medidoEm: medidoEm);
+    test(
+      'com o arredondamento, 1.2 + 0.41 dá Alerta na DC01, e não Atenção',
+      () {
+        final leitura = LeituraNivel(
+          codigoEstacao: 'DC01',
+          nivel: 1.2 + 0.41,
+          medidoEm: medidoEm,
+        );
 
-      expect(classificarEstagio(leitura.nivel, cotasDc01), EstagioAlerta.alerta);
-    });
+        expect(
+          classificarEstagio(leitura.nivel, cotasDc01),
+          EstagioAlerta.alerta,
+        );
+      },
+    );
 
     for (final codigo in ['', '   ']) {
       test('rejeita código da estação "$codigo"', () {
         expect(
           () => LeituraNivel(
-              codigoEstacao: codigo, nivel: 1.45, medidoEm: medidoEm),
+            codigoEstacao: codigo,
+            nivel: 1.45,
+            medidoEm: medidoEm,
+          ),
           throwsArgumentError,
         );
       });
