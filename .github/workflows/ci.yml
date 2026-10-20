@@ -30,12 +30,14 @@ jobs:
   # ----------------------------------------------------------------------------
   testes:
     name: Testes e cobertura
-    runs-on: ubuntu-latest   # máquina virtual Linux gratuita do GitHub
+    # Versão do Linux fixa: o "ubuntu-latest" muda sozinho quando o GitHub
+    # troca de imagem (migração para o Ubuntu 26 a partir de 19/10/2026).
+    runs-on: ubuntu-24.04   # máquina virtual Linux gratuita do GitHub
 
     steps:
       # 1) Baixa o código do repositório para a máquina virtual.
       - name: Baixar o código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 2) Instala o Flutter na MESMA versão do PC (3.47.7) e guarda em cache.
       #    Versão fixa: uma atualização do Flutter não reprova o CI de surpresa.
@@ -69,31 +71,42 @@ jobs:
 
       # 8) Guarda o relatório de cobertura para download na página da execução.
       - name: Publicar relatório de cobertura
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cobertura-lcov
           path: coverage/lcov.info
 
       # 9) Exige no mínimo 80% de cobertura na LÓGICA (lib/domain e lib/data).
       #    Telas, tema e main ficam fora da conta (são cobertos por testes de widget).
+      #    A conta é feita aqui mesmo, a partir do coverage/lcov.info, sem action de
+      #    terceiros (a very_good_coverage foi arquivada em 31/03/2026).
+      #    No lcov.info: "SF:" = arquivo, "LF:" = linhas, "LH:" = linhas testadas.
       - name: Exigir 80% de cobertura na lógica
-        uses: VeryGoodOpenSource/very_good_coverage@v3
-        with:
-          path: coverage/lcov.info
-          min_coverage: 80
-          exclude: 'lib/main.dart lib/app.dart lib/core/** lib/ui/**'
+        run: |
+          awk -v minimo=80 '
+            /^SF:/ { arquivo = substr($0, 4)
+                     ignorar = (arquivo ~ /^lib\/(main|app)\.dart$/ || arquivo ~ /^lib\/(core|ui)\//) }
+            /^LF:/ && !ignorar { total += substr($0, 4) }
+            /^LH:/ && !ignorar { cobertas += substr($0, 4) }
+            END {
+              if (total == 0) { print "Nenhuma linha de lógica no relatório."; exit 1 }
+              pct = 100 * cobertas / total
+              printf "Cobertura da lógica: %.1f%% (%d de %d linhas). Mínimo: %d%%.\n", pct, cobertas, total, minimo
+              if (pct < minimo) exit 1
+            }' coverage/lcov.info
 
   # ----------------------------------------------------------------------------
   # JOB 2 — compila para Android (Linux). Só depois que os testes passarem.
+  # Roda no main e nos Pull Requests: o build quebrado aparece ANTES do merge.
   # ----------------------------------------------------------------------------
   build-android:
     name: Compilar Android
     needs: testes
-    if: github.ref == 'refs/heads/main'   # só no main, para poupar tempo
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4       # o build Android precisa do Java
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6       # o build Android precisa do Java
         with:
           distribution: temurin
           java-version: '17'
@@ -110,14 +123,15 @@ jobs:
   # JOB 3 — compila para iOS (macOS). É assim que validamos iOS sem ter um Mac.
   # "--no-codesign" pula a assinatura da Apple (que exigiria conta paga).
   # Repositório PÚBLICO = minutos de macOS gratuitos.
+  # Roda no main e nos Pull Requests, como o build Android.
   # ----------------------------------------------------------------------------
   build-ios:
     name: Compilar iOS
     needs: testes
-    if: github.ref == 'refs/heads/main'
-    runs-on: macos-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    runs-on: macos-26   # versão fixa, a mesma em que o CI passou em 19/10/2026
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
