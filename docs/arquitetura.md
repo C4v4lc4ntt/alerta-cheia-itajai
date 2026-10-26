@@ -61,6 +61,7 @@ lib/
 │   ├── models/               # entidades imutáveis
 │   └── regras/               # lógica pura — alvo dos 80% de cobertura
 ├── data/
+│   ├── catalogo/             # estações e cotas oficiais (reserva offline, D07)
 │   ├── servicos/             # interfaces + implementações (fake, real)
 │   └── repositorios/         # cache offline, combinação de fontes
 └── ui/
