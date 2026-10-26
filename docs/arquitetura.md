@@ -24,7 +24,7 @@ flowchart TB
     REP["Repositórios<br/>(cache offline, combinam fontes)"]
     SI["Interface do serviço<br/>(NivelRioServico)"]
     FAKE["Serviço simulado<br/>(MVP)"]
-    REAL["Serviço Defesa Civil<br/>(futuro)"]
+    REAL["Serviço Defesa Civil<br/>(app.json do portal, D07)"]
     FB["Firestore / FCM<br/>(Sprint 3)"]
   end
   V -->|observa| VM
