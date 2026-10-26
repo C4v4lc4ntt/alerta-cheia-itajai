@@ -78,3 +78,19 @@ as cotas acompanham a fonte oficial em vez de ficarem fixas no código.
 **Por quê:** é o pacote recomendado pelo Flutter para requisições HTTP, é
 pequeno e já traz a ferramenta de teste. O `dio` foi descartado por trazer
 recursos que o app não usa.
+
+## D10 · Maré pelo boletim oficial e pela tábua mensal (26/10/2026)
+**Contexto:** a tábua de marés do portal é uma imagem (JPEG) publicada uma vez
+por mês (`/api/v1/tabuas-mare/atual`); os horários e alturas não podem ser
+lidos com segurança pelo app. O portal também publica o boletim da Defesa
+Civil (`/api/v1/situacao-atual`), com a situação da cidade e um texto que
+inclui os horários de risco de maré.
+**Decisão:**
+- A tela Início mostra o boletim oficial (situação, texto e horário) e um
+  botão para ver a tábua de marés do mês.
+- O app não extrai valores da imagem e a maré não muda o estágio (passo 16).
+- Se a tábua publicada não for do mês atual, o app avisa.
+- Os alertas ativos (`/api/v1/alertas/ativo`) ficam para o RF02, quando o
+  formato real de um alerta for conhecido.
+**Por quê:** a maré chega ao morador com a interpretação oficial, sem o app
+criar regra própria, e reaproveita o acesso ao portal da D07/D09.
