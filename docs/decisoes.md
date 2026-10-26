@@ -66,3 +66,15 @@ da medição e as cotas de Atenção, Alerta e Emergência.
 - A autorização para consumir esses dados será pedida à Defesa Civil (passo 17).
 **Por quê:** a validação com moradores fica mais convincente com o rio de verdade, e
 as cotas acompanham a fonte oficial em vez de ficarem fixas no código.
+
+## D09 · Pacote http para ler o portal (26/10/2026)
+**Contexto:** a D07 exige baixar o `app.json` do portal da Defesa Civil.
+**Decisão:** usar o pacote `http` (1.6.0), mantido pela equipe do Dart.
+- Uso: um GET no endereço público do `app.json`; nenhum dado é enviado.
+- Testes: `MockClient`, que já vem no pacote, finge a resposta do portal.
+  Nenhum teste acessa a internet.
+- O portal responde `application/json` sem charset: o corpo é decodificado
+  explicitamente como UTF-8, senão "Itajaí" vira texto quebrado.
+**Por quê:** é o pacote recomendado pelo Flutter para requisições HTTP, é
+pequeno e já traz a ferramenta de teste. O `dio` foi descartado por trazer
+recursos que o app não usa.
