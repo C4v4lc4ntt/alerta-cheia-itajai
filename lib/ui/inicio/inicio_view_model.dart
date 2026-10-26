@@ -1,9 +1,9 @@
 // =============================================================================
 // inicio_view_model.dart — ViewModel da tela Início (RF01).
 //
-// ETAPA VERDE: código mínimo para os testes passarem.
-// Junta níveis, boletim e tábua de marés e calcula o estágio da cidade com
-// as regras do domínio. A View só desenha o estado que ele expõe.
+// Junta níveis, boletim e tábua de marés, calcula o estágio da cidade com as
+// regras do domínio e escolhe a estação mais crítica para a tela mostrar.
+// A View só desenha o estado que ele expõe.
 // =============================================================================
 import 'package:flutter/foundation.dart';
 
@@ -11,6 +11,7 @@ import '../../data/catalogo/catalogo_estacoes.dart';
 import '../../data/servicos/boletim_servico.dart';
 import '../../data/servicos/nivel_rio_servico.dart';
 import '../../domain/models/boletim_oficial.dart';
+import '../../domain/models/estacao.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/models/leitura_nivel.dart';
 import '../../domain/models/tabua_mare.dart';
@@ -39,6 +40,8 @@ final class InicioPronto extends EstadoInicio {
     required this.estagioCidade,
     required this.leituras,
     required this.atualizadoEm,
+    required this.estacaoMaisCritica,
+    required this.leituraMaisCritica,
     this.boletim,
     this.tabuaMare,
   });
@@ -52,12 +55,25 @@ final class InicioPronto extends EstadoInicio {
   /// Horário da leitura mais antiga entre as usadas.
   final DateTime atualizadoEm;
 
+  /// Estação que mais pesa no estágio da cidade.
+  final Estacao estacaoMaisCritica;
+
+  /// Leitura da [estacaoMaisCritica].
+  final LeituraNivel leituraMaisCritica;
+
   /// Boletim oficial; null se não houver ou se o portal falhar (D10).
   final BoletimOficial? boletim;
 
   /// Tábua de marés do mês; null se não houver ou se o portal falhar (D10).
   final TabuaMare? tabuaMare;
 }
+
+// Uma leitura reconhecida, com a estação e o estágio dela.
+typedef _Avaliada = ({
+  Estacao estacao,
+  LeituraNivel leitura,
+  EstagioAlerta estagio,
+});
 
 /// ViewModel da tela Início: busca os dados e calcula o estágio da cidade.
 class InicioViewModel extends ChangeNotifier {
@@ -82,26 +98,35 @@ class InicioViewModel extends ChangeNotifier {
 
     try {
       final leituras = await niveis.buscarLeituras();
-      final cotasPorCodigo = {
-        for (final estacao in catalogoEstacoes) estacao.codigo: estacao.cotas,
+      final estacoesPorCodigo = {
+        for (final estacao in catalogoEstacoes) estacao.codigo: estacao,
       };
-      final estagios = [
+      final avaliadas = <_Avaliada>[
         for (final leitura in leituras)
           // Estação fora do catálogo é ignorada.
-          if (cotasPorCodigo[leitura.codigoEstacao] case final cotas?)
-            classificarEstagio(leitura.nivel, cotas),
+          if (estacoesPorCodigo[leitura.codigoEstacao] case final estacao?)
+            (
+              estacao: estacao,
+              leitura: leitura,
+              estagio: classificarEstagio(leitura.nivel, estacao.cotas),
+            ),
       ];
 
       // Sem nenhuma estação reconhecida não há base para dizer o estágio.
-      if (estagios.isEmpty) {
+      if (avaliadas.isEmpty) {
         _estado = InicioErro(_mensagemErro);
       } else {
+        final critica = avaliadas.reduce(_maisCritica);
         _estado = InicioPronto(
-          estagioCidade: estagioMaisGrave(estagios),
+          estagioCidade: estagioMaisGrave([
+            for (final avaliada in avaliadas) avaliada.estagio,
+          ]),
           leituras: leituras,
           atualizadoEm: leituras
               .map((l) => l.medidoEm)
               .reduce((a, b) => a.isBefore(b) ? a : b),
+          estacaoMaisCritica: critica.estacao,
+          leituraMaisCritica: critica.leitura,
           boletim: await _semFalhar(boletins.buscarBoletim),
           tabuaMare: await _semFalhar(boletins.buscarTabuaMare),
         );
@@ -115,6 +140,16 @@ class InicioViewModel extends ChangeNotifier {
   static const _mensagemErro =
       'Não foi possível obter os níveis da Defesa Civil. '
       'Tente de novo em instantes.';
+
+  // Maior estágio; no empate, a mais perto da cota de Atenção (em proporção).
+  static _Avaliada _maisCritica(_Avaliada a, _Avaliada b) {
+    if (a.estagio != b.estagio) {
+      return a.estagio.index > b.estagio.index ? a : b;
+    }
+    final proporcaoA = a.leitura.nivel / a.estacao.cotas.atencao;
+    final proporcaoB = b.leitura.nivel / b.estacao.cotas.atencao;
+    return proporcaoA >= proporcaoB ? a : b;
+  }
 
   // Boletim e tábua são complemento: se falharem, a tela segue sem eles.
   Future<T?> _semFalhar<T>(Future<T?> Function() buscar) async {

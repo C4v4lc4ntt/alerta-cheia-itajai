@@ -2,18 +2,30 @@
 // main.dart — ponto de entrada do aplicativo (equivale ao "public static void
 // main" do Java / à classe com @SpringBootApplication).
 //
-// Aqui só "ligamos" o app. Toda a configuração visual e a navegação ficam em
-// app.dart, para que os testes consigam montar o app sem passar por aqui.
+// Aqui o app é "ligado": criamos os serviços reais do portal da Defesa Civil
+// e os ENTREGAMOS (injetamos) ao ViewModel — o mesmo papel da injeção por
+// construtor do Spring, só que feita "à mão", sem framework. Os testes não
+// passam por aqui: eles montam o app com serviços falsos (ver app_test.dart).
 // =============================================================================
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import 'app.dart';
+import 'data/servicos/boletim_servico_defesa_civil.dart';
+import 'data/servicos/nivel_rio_servico_defesa_civil.dart';
+import 'ui/inicio/inicio_view_model.dart';
 
 void main() {
+  // Um só cliente HTTP, compartilhado pelos dois serviços (D09).
+  final cliente = http.Client();
+
   // runApp recebe o widget raiz e o desenha na tela.
-  //
-  // Mais adiante (RF01/RF02) é aqui que vamos CRIAR o serviço simulado de
-  // nível do rio e ENTREGAR (injetar) para os ViewModels — o mesmo papel da
-  // injeção por construtor do Spring, só que feita "à mão", sem framework.
-  runApp(const AlertaCheiaApp());
+  runApp(
+    AlertaCheiaApp(
+      inicioViewModel: InicioViewModel(
+        niveis: NivelRioServicoDefesaCivil(cliente: cliente),
+        boletins: BoletimServicoDefesaCivil(cliente: cliente),
+      ),
+    ),
+  );
 }
