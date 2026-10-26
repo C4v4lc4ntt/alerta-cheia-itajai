@@ -141,5 +141,27 @@ void main() {
       expect(estado.estagioCidade, EstagioAlerta.monitoramento);
       expect(estado.boletim, isNull);
     });
+
+    // A tela mostra a estação que mais pesa no estágio da cidade.
+    test('estação mais crítica: a de maior estágio', () async {
+      when(() => niveis.buscarLeituras()).thenAnswer(
+        (_) async => [
+          ...leiturasNormais,
+          LeituraNivel(codigoEstacao: 'DC09', nivel: 1.42, medidoEm: as2131),
+        ],
+      );
+
+      final estado = await carregarPronto();
+
+      expect(estado.estacaoMaisCritica.codigo, 'DC09');
+      expect(estado.leituraMaisCritica.nivel, 1.42);
+    });
+
+    // DC01: 0,80 / 1,21 = 66% da cota; DC07: 0,06 / 1,00 = 6%.
+    test('no empate de estágio, a mais perto da cota de Atenção', () async {
+      final estado = await carregarPronto();
+
+      expect(estado.estacaoMaisCritica.codigo, 'DC01');
+    });
   });
 }
