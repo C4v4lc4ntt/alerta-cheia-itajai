@@ -20,10 +20,11 @@ abstract final class CoresApp {
 
   // --- Estágios de alerta (RF01) -----------------------------------------
   // Todas têm contraste suficiente (≥ 4,5:1) com texto BRANCO por cima.
-  static const Color estagioNormal = Color(0xFF1E6B45);
+  // Nomes iguais aos estágios oficiais da Defesa Civil (D01).
+  static const Color estagioMonitoramento = Color(0xFF1E6B45);
   static const Color estagioAtencao = Color(0xFF8A5A00);
   static const Color estagioAlerta = Color(0xFFC2410C);
-  static const Color estagioMaximo = Color(0xFF9B1C1C);
+  static const Color estagioEmergencia = Color(0xFF9B1C1C);
 
   // --- Altura da água nos pontos do mapa (RF03/RF04) ----------------------
   // Atenção (acessibilidade): canela e joelho são claras demais para texto
