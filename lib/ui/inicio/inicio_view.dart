@@ -105,6 +105,15 @@ class _Pronto extends StatelessWidget {
         ],
         if (tabua != null) ...[
           const SizedBox(height: 12),
+          // D10: no começo do mês o portal pode devolver a tábua anterior.
+          if (!tabua.doMesAtual) ...[
+            Text(
+              'A tábua deste mês ainda não foi publicada. '
+              'Mostrando a de ${tabua.mesReferencia}.',
+              style: texto.bodySmall,
+            ),
+            const SizedBox(height: 4),
+          ],
           FilledButton.tonalIcon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
