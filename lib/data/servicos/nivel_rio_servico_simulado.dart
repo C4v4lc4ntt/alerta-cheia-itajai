@@ -35,6 +35,12 @@ class NivelRioServicoSimulado implements NivelRioServico {
   /// horário fixo. Assim o serviço nunca chama DateTime.now() sozinho.
   final DateTime Function() agora;
 
+  // Folgas (m) em relação às cotas: longe o bastante da fronteira para o
+  // estágio simulado não depender de arredondamento.
+  static const _abaixoDaAtencao = 0.30;
+  static const _acimaDoAlerta = 0.05;
+  static const _acimaDaEmergencia = 0.20;
+
   @override
   Future<List<LeituraNivel>> buscarLeituras() async {
     final horario = agora();
@@ -52,12 +58,12 @@ class NivelRioServicoSimulado implements NivelRioServico {
   double _nivelPara(Estacao estacao) {
     final cotas = estacao.cotas;
     return switch (cenario) {
-      CenarioSimulado.normal => cotas.atencao - 0.30,
-      CenarioSimulado.cheia => cotas.emergencia + 0.20,
+      CenarioSimulado.normal => cotas.atencao - _abaixoDaAtencao,
+      CenarioSimulado.cheia => cotas.emergencia + _acimaDaEmergencia,
       CenarioSimulado.enchenteSemChuva =>
         estacao.rio.startsWith('Ribeirão')
-            ? cotas.atencao - 0.30
-            : cotas.alerta + 0.05,
+            ? cotas.atencao - _abaixoDaAtencao
+            : cotas.alerta + _acimaDoAlerta,
     };
   }
 }
