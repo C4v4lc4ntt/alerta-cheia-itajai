@@ -158,4 +158,27 @@ void main() {
 
     verify(() => niveis.buscarLeituras()).called(2);
   });
+
+  // D10: no começo do mês a Defesa Civil pode ainda não ter publicado a
+  // tábua nova; o portal devolve a anterior e o app precisa deixar claro.
+  testWidgets('avisa quando a tábua não é do mês atual', (tester) async {
+    when(() => boletins.buscarTabuaMare()).thenAnswer(
+      (_) async => TabuaMare(
+        mesReferencia: '2026-10',
+        endereco: Uri.parse('https://exemplo.com/tabua.jpeg'),
+        tipoArquivo: 'image/jpeg',
+        doMesAtual: false,
+      ),
+    );
+
+    await abrirTela(tester);
+
+    expect(
+      find.text(
+        'A tábua deste mês ainda não foi publicada. '
+        'Mostrando a de 2026-10.',
+      ),
+      findsOneWidget,
+    );
+  });
 }
