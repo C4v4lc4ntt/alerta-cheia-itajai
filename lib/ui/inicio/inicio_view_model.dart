@@ -82,11 +82,14 @@ class InicioViewModel extends ChangeNotifier {
 
     try {
       final leituras = await niveis.buscarLeituras();
+      final cotasPorCodigo = {
+        for (final estacao in catalogoEstacoes) estacao.codigo: estacao.cotas,
+      };
       final estagios = [
         for (final leitura in leituras)
-          for (final estacao in catalogoEstacoes)
-            if (estacao.codigo == leitura.codigoEstacao)
-              classificarEstagio(leitura.nivel, estacao.cotas),
+          // Estação fora do catálogo é ignorada.
+          if (cotasPorCodigo[leitura.codigoEstacao] case final cotas?)
+            classificarEstagio(leitura.nivel, cotas),
       ];
 
       // Sem nenhuma estação reconhecida não há base para dizer o estágio.
