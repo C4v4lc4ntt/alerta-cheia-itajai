@@ -27,8 +27,11 @@ void main() {
   late NivelRioServicoMock niveis;
   late BoletimServicoMock boletins;
 
-  // 21:30 UTC = 18:30 em Brasília.
+  // 21:30 UTC = 18:30 em Brasília (medição).
   final as2130 = DateTime.utc(2026, 10, 26, 21, 30);
+
+  // 21:45 UTC = 18:45 em Brasília (consulta ao portal, relógio injetado).
+  final as2145 = DateTime.utc(2026, 10, 26, 21, 45);
 
   final leiturasNormais = [
     LeituraNivel(codigoEstacao: 'DC01', nivel: 0.80, medidoEm: as2130),
@@ -60,7 +63,11 @@ void main() {
 
   // Monta a tela com o ViewModel de verdade e espera carregar.
   Future<void> abrirTela(WidgetTester tester) async {
-    final viewModel = InicioViewModel(niveis: niveis, boletins: boletins);
+    final viewModel = InicioViewModel(
+      niveis: niveis,
+      boletins: boletins,
+      agora: () => as2145,
+    );
     await tester.pumpWidget(
       MaterialApp(home: InicioView(viewModel: viewModel)),
     );
@@ -137,13 +144,14 @@ void main() {
     expect(find.byKey(const Key('tela_tabua_mare')), findsOneWidget);
   });
 
-  testWidgets('mostra a hora de Brasília e a fonte dos dados', (tester) async {
+  // "Atualizado às" confundia: parecia que o app não tinha consultado.
+  testWidgets('o rodapé mostra quando foi medido e quando foi consultado', (
+    tester,
+  ) async {
     await abrirTela(tester);
 
-    expect(
-      find.text('Atualizado às 18:30 · Dados: Defesa Civil de Itajaí'),
-      findsOneWidget,
-    );
+    expect(find.text('Medido às 18:30 · consultado às 18:45'), findsOneWidget);
+    expect(find.text('Dados: Defesa Civil de Itajaí'), findsOneWidget);
   });
 
   testWidgets('no erro, "Tentar de novo" busca os dados outra vez', (
@@ -180,5 +188,26 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  // No Android, "fechar" o app costuma só mandá-lo para o segundo plano:
+  // ao voltar, a tela não é recriada e precisa buscar de novo.
+  testWidgets('ao voltar para o app, busca os dados de novo', (tester) async {
+    await abrirTela(tester);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    verify(() => niveis.buscarLeituras()).called(2);
+  });
+
+  testWidgets('puxar a tela para baixo busca os dados de novo', (tester) async {
+    await abrirTela(tester);
+
+    await tester.fling(find.byType(ListView), const Offset(0, 300), 1000);
+    await tester.pumpAndSettle();
+
+    verify(() => niveis.buscarLeituras()).called(2);
   });
 }

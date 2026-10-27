@@ -163,5 +163,20 @@ void main() {
 
       expect(estado.estacaoMaisCritica.codigo, 'DC01');
     });
+
+    // O app mostra quando consultou o portal; o relógio é injetado para o
+    // teste não depender da hora real.
+    test('registra a hora da consulta', () async {
+      final as2145 = DateTime.utc(2026, 10, 26, 21, 45);
+      viewModel = InicioViewModel(
+        niveis: niveis,
+        boletins: boletins,
+        agora: () => as2145,
+      );
+
+      final estado = await carregarPronto();
+
+      expect(estado.consultadoEm, as2145);
+    });
   });
 }
