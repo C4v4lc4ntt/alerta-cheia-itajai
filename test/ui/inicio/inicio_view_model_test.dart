@@ -178,5 +178,25 @@ void main() {
 
       expect(estado.consultadoEm, as2145);
     });
+
+    // Mesma ordem da estação mais crítica: maior estágio e, no empate,
+    // a mais perto da cota de Atenção.
+    test('lista as estações da mais crítica para a menos crítica', () async {
+      when(() => niveis.buscarLeituras()).thenAnswer(
+        (_) async => [
+          ...leiturasNormais, // DC01 (66% da cota) e DC07 (6%)
+          LeituraNivel(codigoEstacao: 'DC09', nivel: 1.42, medidoEm: as2131),
+        ],
+      );
+
+      final estado = await carregarPronto();
+
+      expect(estado.estacoes.map((s) => s.estacao.codigo), [
+        'DC09',
+        'DC01',
+        'DC07',
+      ]);
+      expect(estado.estacoes.first.estagio, EstagioAlerta.alerta);
+    });
   });
 }

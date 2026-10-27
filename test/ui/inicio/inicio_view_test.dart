@@ -220,4 +220,17 @@ void main() {
 
     verify(() => niveis.buscarLeituras()).called(2);
   });
+
+  testWidgets('"Todas as estações" abre a lista com nível e estágio', (
+    tester,
+  ) async {
+    await abrirTela(tester);
+
+    await tester.ensureVisible(find.text('Todas as estações (2)'));
+    await tester.tap(find.text('Todas as estações (2)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('DC07 · Ribeirão da Murta'), findsOneWidget);
+    expect(find.text('0,06 m'), findsOneWidget);
+  });
 }
