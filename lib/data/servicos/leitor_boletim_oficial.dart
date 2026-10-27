@@ -20,7 +20,10 @@ BoletimOficial? lerBoletimOficial(String conteudo) {
     codigo: dados['codigo'] as String,
     situacao: dados['flag'] as String,
     // O portal separa as linhas com \r\n; a tela só precisa de \n.
-    texto: (dados['conteudo'] as String).replaceAll('\r\n', '\n'),
+    texto: (dados['conteudo'] as String)
+        .replaceAll('\r\n', '\n')
+        // Espaço que não quebra antes do "°": "23 °C" fica numa linha só.
+        .replaceAll(' °', '\u00A0°'),
     atualizadoEm: DateTime.parse(dados['atualizado_em'] as String),
   );
 }
