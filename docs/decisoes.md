@@ -94,3 +94,18 @@ inclui os horários de risco de maré.
   formato real de um alerta for conhecido.
 **Por quê:** a maré chega ao morador com a interpretação oficial, sem o app
 criar regra própria, e reaproveita o acesso ao portal da D07/D09.
+
+## D11 · O cartão grande diz o que é calculado (26/10/2026)
+**Contexto:** o app calcula o estágio mais grave entre as 11 estações (D02) e o
+mostrava como "Estágio em Itajaí". Um único ribeirão em Alerta fazia a tela dizer
+"Itajaí: Alerta", enquanto o boletim oficial podia continuar em "Normalidade",
+porque o problema é local.
+**Decisão:**
+- O cartão grande passa a se chamar "Estágio mais grave entre as estações",
+  também no rótulo do leitor de tela. A regra do cálculo não muda.
+- O boletim oficial continua logo abaixo, com o nome que a Defesa Civil usar.
+- No RF02, o destaque passa para a estação do bairro escolhido ou a mais perto
+  do morador; se outra estiver em estágio mais grave, a tela explica qual.
+**Por quê:** o app é complemento dos canais oficiais (D01) e não pode parecer
+uma declaração da Defesa Civil; o título diz exatamente o que o app calculou,
+sem perder o aviso quando qualquer rio sobe.
