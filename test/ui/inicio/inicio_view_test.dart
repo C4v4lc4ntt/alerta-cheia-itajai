@@ -96,6 +96,17 @@ void main() {
     expect(find.text('Monitoramento'), findsOneWidget);
   });
 
+  // D11: o título diz o que o app calcula, para não parecer uma declaração
+  // oficial da Defesa Civil (o boletim oficial vem logo abaixo).
+  testWidgets('o cartão grande diz que é o mais grave entre as estações', (
+    tester,
+  ) async {
+    await abrirTela(tester);
+
+    expect(find.text('Estágio mais grave entre as estações'), findsOneWidget);
+    expect(find.text('ESTÁGIO EM ITAJAÍ'), findsNothing);
+  });
+
   testWidgets('o leitor de tela anuncia o estágio da cidade', (tester) async {
     when(() => niveis.buscarLeituras()).thenAnswer(
       (_) async => [
@@ -106,7 +117,10 @@ void main() {
 
     await abrirTela(tester);
 
-    expect(find.bySemanticsLabel('Estágio em Itajaí: Alerta'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Estágio mais grave entre as estações: Alerta'),
+      findsOneWidget,
+    );
   });
 
   // D05: a barra usa o rótulo curto "Monitor.".
