@@ -108,6 +108,29 @@ class _Pronto extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          Card(
+            child: ExpansionTile(
+              title: Text('Todas as estações (${estado.estacoes.length})'),
+              children: [
+                for (final situacao in estado.estacoes)
+                  ListTile(
+                    dense: true,
+                    // A cor nunca é a única informação: o estágio vem escrito.
+                    leading: Icon(
+                      Icons.circle,
+                      size: 14,
+                      color: corDoEstagio(situacao.estagio),
+                    ),
+                    title: Text(
+                      '${situacao.estacao.codigo} · ${situacao.estacao.rio}',
+                    ),
+                    subtitle: Text(nomeDoEstagio(situacao.estagio)),
+                    trailing: Text(formatarNivel(situacao.leitura.nivel)),
+                  ),
+              ],
+            ),
+          ),
           if (boletim != null) ...[
             const SizedBox(height: 12),
             Card(

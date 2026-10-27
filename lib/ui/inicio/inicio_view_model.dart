@@ -43,6 +43,7 @@ final class InicioPronto extends EstadoInicio {
     required this.consultadoEm,
     required this.estacaoMaisCritica,
     required this.leituraMaisCritica,
+    required this.estacoes,
     this.boletim,
     this.tabuaMare,
   });
@@ -65,6 +66,9 @@ final class InicioPronto extends EstadoInicio {
   /// Leitura da [estacaoMaisCritica].
   final LeituraNivel leituraMaisCritica;
 
+  /// Todas as estações reconhecidas, da mais crítica para a menos crítica.
+  final List<SituacaoEstacao> estacoes;
+
   /// Boletim oficial; null se não houver ou se o portal falhar (D10).
   final BoletimOficial? boletim;
 
@@ -72,8 +76,8 @@ final class InicioPronto extends EstadoInicio {
   final TabuaMare? tabuaMare;
 }
 
-// Uma leitura reconhecida, com a estação e o estágio dela.
-typedef _Avaliada = ({
+/// Uma estação com a leitura e o estágio calculado dela.
+typedef SituacaoEstacao = ({
   Estacao estacao,
   LeituraNivel leitura,
   EstagioAlerta estagio,
@@ -114,7 +118,7 @@ class InicioViewModel extends ChangeNotifier {
       final estacoesPorCodigo = {
         for (final estacao in catalogoEstacoes) estacao.codigo: estacao,
       };
-      final avaliadas = <_Avaliada>[
+      final avaliadas = <SituacaoEstacao>[
         for (final leitura in leituras)
           // Estação fora do catálogo é ignorada.
           if (estacoesPorCodigo[leitura.codigoEstacao] case final estacao?)
@@ -129,7 +133,8 @@ class InicioViewModel extends ChangeNotifier {
       if (avaliadas.isEmpty) {
         _estado = InicioErro(_mensagemErro);
       } else {
-        final critica = avaliadas.reduce(_maisCritica);
+        final ordenadas = [...avaliadas]..sort(_maisCriticaPrimeiro);
+        final critica = ordenadas.first;
         _estado = InicioPronto(
           estagioCidade: estagioMaisGrave([
             for (final avaliada in avaliadas) avaliada.estagio,
@@ -141,6 +146,7 @@ class InicioViewModel extends ChangeNotifier {
           consultadoEm: consultadoEm,
           estacaoMaisCritica: critica.estacao,
           leituraMaisCritica: critica.leitura,
+          estacoes: ordenadas,
           boletim: await _semFalhar(boletins.buscarBoletim),
           tabuaMare: await _semFalhar(boletins.buscarTabuaMare),
         );
@@ -155,15 +161,17 @@ class InicioViewModel extends ChangeNotifier {
       'Não foi possível obter os níveis da Defesa Civil. '
       'Tente de novo em instantes.';
 
-  // Maior estágio; no empate, a mais perto da cota de Atenção (em proporção).
-  static _Avaliada _maisCritica(_Avaliada a, _Avaliada b) {
-    if (a.estagio != b.estagio) {
-      return a.estagio.index > b.estagio.index ? a : b;
-    }
-    final proporcaoA = a.leitura.nivel / a.estacao.cotas.atencao;
-    final proporcaoB = b.leitura.nivel / b.estacao.cotas.atencao;
-    return proporcaoA >= proporcaoB ? a : b;
+  // Mais crítica primeiro: maior estágio e, no empate, a mais perto da cota
+  // de Atenção (em proporção).
+  static int _maisCriticaPrimeiro(SituacaoEstacao a, SituacaoEstacao b) {
+    final porEstagio = b.estagio.index.compareTo(a.estagio.index);
+    if (porEstagio != 0) return porEstagio;
+    return _proporcaoDaCota(b).compareTo(_proporcaoDaCota(a));
   }
+
+  // Quanto da cota de Atenção o nível já alcançou (1,0 = na cota).
+  static double _proporcaoDaCota(SituacaoEstacao situacao) =>
+      situacao.leitura.nivel / situacao.estacao.cotas.atencao;
 
   // Boletim e tábua são complemento: se falharem, a tela segue sem eles.
   Future<T?> _semFalhar<T>(Future<T?> Function() buscar) async {
