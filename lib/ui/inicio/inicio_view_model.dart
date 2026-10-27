@@ -40,6 +40,7 @@ final class InicioPronto extends EstadoInicio {
     required this.estagioCidade,
     required this.leituras,
     required this.atualizadoEm,
+    required this.consultadoEm,
     required this.estacaoMaisCritica,
     required this.leituraMaisCritica,
     this.boletim,
@@ -54,6 +55,9 @@ final class InicioPronto extends EstadoInicio {
 
   /// Horário da leitura mais antiga entre as usadas.
   final DateTime atualizadoEm;
+
+  /// Quando o app consultou o portal.
+  final DateTime consultadoEm;
 
   /// Estação que mais pesa no estágio da cidade.
   final Estacao estacaoMaisCritica;
@@ -78,7 +82,15 @@ typedef _Avaliada = ({
 /// ViewModel da tela Início: busca os dados e calcula o estágio da cidade.
 class InicioViewModel extends ChangeNotifier {
   /// Cria o ViewModel com os serviços injetados (nos testes, mocks).
-  InicioViewModel({required this.niveis, required this.boletins});
+  /// [agora] diz que horas são; no app, o relógio do celular.
+  InicioViewModel({
+    required this.niveis,
+    required this.boletins,
+    DateTime Function()? agora,
+  }) : agora = agora ?? DateTime.now;
+
+  /// Relógio usado para registrar a hora da consulta.
+  final DateTime Function() agora;
 
   /// De onde vêm as leituras de nível.
   final NivelRioServico niveis;
@@ -97,6 +109,7 @@ class InicioViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final consultadoEm = agora();
       final leituras = await niveis.buscarLeituras();
       final estacoesPorCodigo = {
         for (final estacao in catalogoEstacoes) estacao.codigo: estacao,
@@ -125,6 +138,7 @@ class InicioViewModel extends ChangeNotifier {
           atualizadoEm: leituras
               .map((l) => l.medidoEm)
               .reduce((a, b) => a.isBefore(b) ? a : b),
+          consultadoEm: consultadoEm,
           estacaoMaisCritica: critica.estacao,
           leituraMaisCritica: critica.leitura,
           boletim: await _semFalhar(boletins.buscarBoletim),

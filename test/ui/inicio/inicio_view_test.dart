@@ -195,8 +195,18 @@ void main() {
   testWidgets('ao voltar para o app, busca os dados de novo', (tester) async {
     await abrirTela(tester);
 
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    // O Flutter exige a sequência real de estados, passo a passo:
+    // sair do app (inactive → hidden → paused) e voltar (o caminho inverso).
+    for (final estado in [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(estado);
+    }
     await tester.pumpAndSettle();
 
     verify(() => niveis.buscarLeituras()).called(2);

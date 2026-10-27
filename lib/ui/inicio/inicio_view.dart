@@ -25,11 +25,23 @@ class InicioView extends StatefulWidget {
 }
 
 class _InicioViewState extends State<InicioView> {
+  // Busca de novo quando o app volta do segundo plano: no Android, "fechar"
+  // o app costuma só escondê-lo, e a tela não é recriada ao voltar.
+  late final AppLifecycleListener _ciclo;
+
   @override
   void initState() {
     super.initState();
+    _ciclo = AppLifecycleListener(onResume: widget.viewModel.carregar);
     // Ao abrir a tela, busca os dados no portal.
     widget.viewModel.carregar();
+  }
+
+  @override
+  void dispose() {
+    // Desliga o "ouvinte" junto com a tela, para não vazar memória.
+    _ciclo.dispose();
+    super.dispose();
   }
 
   @override
@@ -49,7 +61,10 @@ class _InicioViewState extends State<InicioView> {
               mensagem: mensagem,
               aoTentarDeNovo: widget.viewModel.carregar,
             ),
-            final InicioPronto pronto => _Pronto(estado: pronto),
+            final InicioPronto pronto => _Pronto(
+              estado: pronto,
+              aoAtualizar: widget.viewModel.carregar,
+            ),
           },
         ),
       ),
@@ -59,9 +74,12 @@ class _InicioViewState extends State<InicioView> {
 
 /// Conteúdo da tela quando os dados chegaram.
 class _Pronto extends StatelessWidget {
-  const _Pronto({required this.estado});
+  const _Pronto({required this.estado, required this.aoAtualizar});
 
   final InicioPronto estado;
+
+  /// Chamado quando o morador puxa a tela para baixo.
+  final Future<void> Function() aoAtualizar;
 
   @override
   Widget build(BuildContext context) {
@@ -70,68 +88,80 @@ class _Pronto extends StatelessWidget {
     final boletim = estado.boletim;
     final tabua = estado.tabuaMare;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _CartaoEstagio(estagio: estado.estagioCidade),
-        const SizedBox(height: 12),
-        Card(
-          child: ListTile(
-            title: Text('${estacao.codigo} · ${estacao.rio}'),
-            subtitle: const Text('Estação mais perto da cota'),
-            trailing: Text(
-              formatarNivel(estado.leituraMaisCritica.nivel),
-              style: texto.headlineSmall,
-            ),
-          ),
-        ),
-        if (boletim != null) ...[
+    // Puxar para baixo atualiza. "AlwaysScrollable" deixa puxar mesmo
+    // quando o conteúdo cabe inteiro na tela.
+    return RefreshIndicator(
+      onRefresh: aoAtualizar,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          _CartaoEstagio(estagio: estado.estagioCidade),
           const SizedBox(height: 12),
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Boletim da Defesa Civil', style: texto.labelMedium),
-                  const SizedBox(height: 4),
-                  Text(boletim.situacao, style: texto.titleMedium),
-                  const SizedBox(height: 8),
-                  Text(boletim.texto),
-                ],
+            child: ListTile(
+              title: Text('${estacao.codigo} · ${estacao.rio}'),
+              subtitle: const Text('Estação mais perto da cota'),
+              trailing: Text(
+                formatarNivel(estado.leituraMaisCritica.nivel),
+                style: texto.headlineSmall,
               ),
             ),
           ),
-        ],
-        if (tabua != null) ...[
-          const SizedBox(height: 12),
-          // D10: no começo do mês o portal pode devolver a tábua anterior.
-          if (!tabua.doMesAtual) ...[
-            Text(
-              'A tábua deste mês ainda não foi publicada. '
-              'Mostrando a de ${tabua.mesReferencia}.',
-              style: texto.bodySmall,
+          if (boletim != null) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Boletim da Defesa Civil', style: texto.labelMedium),
+                    const SizedBox(height: 4),
+                    Text(boletim.situacao, style: texto.titleMedium),
+                    const SizedBox(height: 8),
+                    Text(boletim.texto),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 4),
           ],
-          FilledButton.tonalIcon(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => TabuaMareView(tabua: tabua),
+          if (tabua != null) ...[
+            const SizedBox(height: 12),
+            // D10: no começo do mês o portal pode devolver a tábua anterior.
+            if (!tabua.doMesAtual) ...[
+              Text(
+                'A tábua deste mês ainda não foi publicada. '
+                'Mostrando a de ${tabua.mesReferencia}.',
+                style: texto.bodySmall,
               ),
+              const SizedBox(height: 4),
+            ],
+            FilledButton.tonalIcon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => TabuaMareView(tabua: tabua),
+                ),
+              ),
+              icon: const Icon(Icons.waves),
+              label: const Text('Ver tábua de marés'),
             ),
-            icon: const Icon(Icons.waves),
-            label: const Text('Ver tábua de marés'),
+          ],
+          const SizedBox(height: 16),
+          // Quando o rio foi medido e quando o app consultou o portal.
+          Text(
+            'Medido às ${horaDeBrasilia(estado.atualizadoEm)} · '
+            'consultado às ${horaDeBrasilia(estado.consultadoEm)}',
+            style: texto.bodySmall,
+            textAlign: TextAlign.center,
+          ),
+          Text(
+            'Dados: Defesa Civil de Itajaí',
+            style: texto.bodySmall,
+            textAlign: TextAlign.center,
           ),
         ],
-        const SizedBox(height: 16),
-        Text(
-          'Atualizado às ${horaDeBrasilia(estado.atualizadoEm)} · '
-          'Dados: Defesa Civil de Itajaí',
-          style: texto.bodySmall,
-          textAlign: TextAlign.center,
-        ),
-      ],
+      ),
     );
   }
 }
