@@ -202,7 +202,7 @@ class _CartaoEstagio extends StatelessWidget {
     // O leitor de tela lê uma frase só, em vez do título e da barra soltos.
     return Semantics(
       container: true,
-      label: 'Estágio em Itajaí: ${nomeDoEstagio(estagio)}',
+      label: 'Estágio mais grave entre as estações: ${nomeDoEstagio(estagio)}',
       child: ExcludeSemantics(
         child: Container(
           padding: const EdgeInsets.all(20),
@@ -214,7 +214,8 @@ class _CartaoEstagio extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ESTÁGIO EM ITAJAÍ',
+                // D11: diz o que o app calcula; não é declaração oficial.
+                'Estágio mais grave entre as estações',
                 style: texto.labelMedium?.copyWith(
                   color: Colors.white,
                   letterSpacing: 1.2,
