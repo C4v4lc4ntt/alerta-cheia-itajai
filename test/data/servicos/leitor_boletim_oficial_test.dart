@@ -33,6 +33,15 @@ void main() {
       expect(lerBoletimOficial(conteudo)!.texto, isNot(contains('\r')));
     });
 
+    // "23 °C" não pode ficar com o "23" numa linha e o "°C" na outra:
+    // o espaço antes do "°" vira um espaço que não quebra (\u00A0).
+    test('o número fica junto do °C na quebra de linha', () {
+      final texto = lerBoletimOficial(conteudo)!.texto;
+
+      expect(texto, contains('23\u00A0°C'));
+      expect(texto, isNot(contains(' °')));
+    });
+
     test('sem boletim publicado ("data": null) → null', () {
       expect(lerBoletimOficial('{"data": null}'), isNull);
     });
