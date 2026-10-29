@@ -16,8 +16,8 @@ Em Itajaí a informação sobre cheias está espalhada: o SMS 40199 e o cell bro
 
 | # | Funcionalidade | Status |
 |---|---|---|
-| RF01 | Estágio de alerta, nível do rio e da maré, com horário da última atualização | 🚧 Em andamento |
-| RF02 | Escolha de bairros e notificação quando o estágio **muda** | 🔜 Sprint 2 |
+| RF01 | Estágio de alerta, nível das 11 estações, boletim oficial e tábua de marés, com horário da medição | ✅ Concluído |
+| RF02 | Escolha de bairros e notificação quando o estágio **muda** | 🚧 Em andamento |
 | RF03 | Marcar ponto de alagamento (local e altura da água), sem identificação | 🔜 Sprint 3 |
 | RF04 | Mapa dos pontos ativos (somem 6 h após a criação ou com 3 "já baixou") | 🔜 Sprint 3 |
 | RF05 | Abrigos e contatos de emergência com ligação em um toque | 🔜 Sprint 4 |
@@ -33,8 +33,8 @@ MVVM em camadas, como recomenda o guia oficial do Flutter. Detalhes e justificat
 flowchart LR
   View --> ViewModel --> Regras["Regras (domain)"]
   ViewModel --> Repositorio --> Servico["Serviço (interface)"]
-  Servico -.-> Simulado["Simulado (MVP)"]
-  Servico -.-> DefesaCivil["Defesa Civil (futuro)"]
+  Servico -.-> Simulado["Simulado (testes e demonstração)"]
+  Servico -.-> DefesaCivil["Portal da Defesa Civil (D07)"]
 ```
 
 ## Desenvolvimento orientado a testes
@@ -45,11 +45,11 @@ Cada regra nasce em três commits, que ficam visíveis no histórico:
 2. `feat(rfXX): ...` — o código mínimo faz o teste **passar** (verde)
 3. `refactor(rfXX): ...` — o código é melhorado com os testes ainda verdes
 
-O CI (GitHub Actions) roda formatação, análise estática e todos os testes a cada push, e compila para Android e iOS no `main`.
+O CI (GitHub Actions) roda formatação, análise estática, todos os testes e a trava de 80% de cobertura na lógica a cada push, e compila para Android e iOS nos Pull Requests e no `main`.
 
 ## Stack
 
-Flutter/Dart · flutter_test · integration_test · mocktail · Firebase Firestore (plano gratuito) · notificações locais · flutter_map + OpenStreetMap · GitHub Actions
+Flutter/Dart · flutter_test · integration_test · mocktail · http · Firebase Firestore (plano gratuito) · notificações locais · flutter_map + OpenStreetMap · GitHub Actions
 
 ## Como rodar
 
