@@ -11,6 +11,7 @@ import 'core/tema/tema_app.dart';
 import 'ui/ajuda/ajuda_view.dart';
 import 'ui/ajustes/ajustes_view.dart';
 import 'ui/inicio/inicio_view.dart';
+import 'ui/inicio/inicio_view_model.dart';
 import 'ui/mapa/mapa_view.dart';
 
 /// Widget raiz do aplicativo.
@@ -18,7 +19,11 @@ import 'ui/mapa/mapa_view.dart';
 /// É "Stateless" (sem estado): só monta o MaterialApp com o tema e a tela
 /// inicial. Quem guarda estado (qual aba está aberta) é [NavegacaoPrincipal].
 class AlertaCheiaApp extends StatelessWidget {
-  const AlertaCheiaApp({super.key});
+  /// Cria o app com o ViewModel da tela Início já montado (ver main.dart).
+  const AlertaCheiaApp({super.key, required this.inicioViewModel});
+
+  /// ViewModel entregue à tela Início.
+  final InicioViewModel inicioViewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +32,7 @@ class AlertaCheiaApp extends StatelessWidget {
       title: 'Alerta Cheia Itajaí',
       debugShowCheckedModeBanner: false, // esconde a faixa "DEBUG" no canto
       theme: TemaApp.claro(),
-      home: const NavegacaoPrincipal(),
+      home: NavegacaoPrincipal(inicioViewModel: inicioViewModel),
     );
   }
 }
@@ -37,7 +42,11 @@ class AlertaCheiaApp extends StatelessWidget {
 /// É "Stateful" (com estado) porque precisa lembrar qual aba está
 /// selecionada e se redesenhar quando o usuário toca em outra.
 class NavegacaoPrincipal extends StatefulWidget {
-  const NavegacaoPrincipal({super.key});
+  /// Cria a navegação com o ViewModel da tela Início.
+  const NavegacaoPrincipal({super.key, required this.inicioViewModel});
+
+  /// ViewModel entregue à tela Início.
+  final InicioViewModel inicioViewModel;
 
   @override
   State<NavegacaoPrincipal> createState() => _NavegacaoPrincipalState();
@@ -48,21 +57,22 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
   // O "_" no começo do nome deixa o campo privado ao arquivo (como "private").
   int _abaAtual = 0;
 
-  // Lista das telas, na mesma ordem dos botões da barra inferior.
-  static const List<Widget> _telas = [
-    InicioView(),
-    MapaView(),
-    AjudaView(),
-    AjustesView(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // Lista das telas, na mesma ordem dos botões da barra inferior.
+    // Deixou de ser "const" no ciclo 7: a tela Início recebe o ViewModel.
+    final telas = <Widget>[
+      InicioView(viewModel: widget.inicioViewModel),
+      const MapaView(),
+      const AjudaView(),
+      const AjustesView(),
+    ];
+
     return Scaffold(
       // Mostra só a tela da aba selecionada.
       // (Se no futuro o mapa precisar manter o zoom ao trocar de aba,
       // trocamos por um IndexedStack, que mantém todas as telas vivas.)
-      body: _telas[_abaAtual],
+      body: telas[_abaAtual],
 
       // Barra inferior no padrão Material 3.
       bottomNavigationBar: NavigationBar(

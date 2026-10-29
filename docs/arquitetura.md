@@ -24,7 +24,7 @@ flowchart TB
     REP["Repositórios<br/>(cache offline, combinam fontes)"]
     SI["Interface do serviço<br/>(NivelRioServico)"]
     FAKE["Serviço simulado<br/>(MVP)"]
-    REAL["Serviço Defesa Civil<br/>(futuro)"]
+    REAL["Serviço Defesa Civil<br/>(app.json do portal, D07)"]
     FB["Firestore / FCM<br/>(Sprint 3)"]
   end
   V -->|observa| VM
@@ -61,6 +61,7 @@ lib/
 │   ├── models/               # entidades imutáveis
 │   └── regras/               # lógica pura — alvo dos 80% de cobertura
 ├── data/
+│   ├── catalogo/             # estações e cotas oficiais (reserva offline, D07)
 │   ├── servicos/             # interfaces + implementações (fake, real)
 │   └── repositorios/         # cache offline, combinação de fontes
 └── ui/

@@ -45,3 +45,67 @@ Decisões que mudam ou detalham os requisitos do relatório da Etapa 1. Cada uma
 
 **Por quê:** garantir os seis requisitos funcionando, com TDD e validação com moradores, até 05/12/2026.
 **Testes:** RF02 — mudança de estágio gera notificação local, mesmo estágio não gera; RF04 — ponto com mais de 6 h desde a criação fica inativo, e ponto com 3 contestações fica inativo mesmo dentro do prazo.
+
+
+## D07 · Dados reais do portal da Defesa Civil (19/10/2026)
+**Contexto:** o relatório previa um serviço simulado no MVP. A página "Nível dos Rios"
+do portal de monitoramento da Defesa Civil de Itajaí é alimentada por um arquivo
+público de dados (`/data/current/app.json`) com, para cada estação, o nível, o horário
+da medição e as cotas de Atenção, Alerta e Emergência.
+**Decisão:**
+- O app busca os níveis e as cotas nesse arquivo público, por trás da interface
+  `NivelRioServico` (implementação "Defesa Civil").
+- O serviço simulado continua: é usado nos testes e para demonstrar cenários de cheia.
+- Os testes nunca acessam a internet. A leitura do arquivo é testada com uma cópia
+  salva, com a data registrada.
+- `docs/catalogo-estacoes.md` é a referência dos testes e a reserva offline.
+- O código da estação segue o portal, sem hífen (`DC01`), e é a chave que liga
+  leituras, cotas e bairros, sem nenhuma conversão no caminho.
+- Se a busca falhar, o app mostra a última leitura salva com o horário dela.
+- O pacote de acesso à rede será justificado e confirmado no ciclo em que for usado.
+- A autorização para consumir esses dados será pedida à Defesa Civil (passo 17).
+**Por quê:** a validação com moradores fica mais convincente com o rio de verdade, e
+as cotas acompanham a fonte oficial em vez de ficarem fixas no código.
+
+## D09 · Pacote http para ler o portal (26/10/2026)
+**Contexto:** a D07 exige baixar o `app.json` do portal da Defesa Civil.
+**Decisão:** usar o pacote `http` (1.6.0), mantido pela equipe do Dart.
+- Uso: um GET no endereço público do `app.json`; nenhum dado é enviado.
+- Testes: `MockClient`, que já vem no pacote, finge a resposta do portal.
+  Nenhum teste acessa a internet.
+- O portal responde `application/json` sem charset: o corpo é decodificado
+  explicitamente como UTF-8, senão "Itajaí" vira texto quebrado.
+**Por quê:** é o pacote recomendado pelo Flutter para requisições HTTP, é
+pequeno e já traz a ferramenta de teste. O `dio` foi descartado por trazer
+recursos que o app não usa.
+
+## D10 · Maré pelo boletim oficial e pela tábua mensal (26/10/2026)
+**Contexto:** a tábua de marés do portal é uma imagem (JPEG) publicada uma vez
+por mês (`/api/v1/tabuas-mare/atual`); os horários e alturas não podem ser
+lidos com segurança pelo app. O portal também publica o boletim da Defesa
+Civil (`/api/v1/situacao-atual`), com a situação da cidade e um texto que
+inclui os horários de risco de maré.
+**Decisão:**
+- A tela Início mostra o boletim oficial (situação, texto e horário) e um
+  botão para ver a tábua de marés do mês.
+- O app não extrai valores da imagem e a maré não muda o estágio (passo 16).
+- Se a tábua publicada não for do mês atual, o app avisa.
+- Os alertas ativos (`/api/v1/alertas/ativo`) ficam para o RF02, quando o
+  formato real de um alerta for conhecido.
+**Por quê:** a maré chega ao morador com a interpretação oficial, sem o app
+criar regra própria, e reaproveita o acesso ao portal da D07/D09.
+
+## D11 · O cartão grande diz o que é calculado (26/10/2026)
+**Contexto:** o app calcula o estágio mais grave entre as 11 estações (D02) e o
+mostrava como "Estágio em Itajaí". Um único ribeirão em Alerta fazia a tela dizer
+"Itajaí: Alerta", enquanto o boletim oficial podia continuar em "Normalidade",
+porque o problema é local.
+**Decisão:**
+- O cartão grande passa a se chamar "Estágio mais grave entre as estações",
+  também no rótulo do leitor de tela. A regra do cálculo não muda.
+- O boletim oficial continua logo abaixo, com o nome que a Defesa Civil usar.
+- No RF02, o destaque passa para a estação do bairro escolhido ou a mais perto
+  do morador; se outra estiver em estágio mais grave, a tela explica qual.
+**Por quê:** o app é complemento dos canais oficiais (D01) e não pode parecer
+uma declaração da Defesa Civil; o título diz exatamente o que o app calculou,
+sem perder o aviso quando qualquer rio sobe.

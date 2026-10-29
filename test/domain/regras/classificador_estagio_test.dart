@@ -6,7 +6,7 @@
 // (commits test(rf01) → feat(rf01) → refactor(rf01)).
 //
 // Cotas usadas: catálogo oficial da Defesa Civil de Itajaí (consulta em
-// 16/10/2026), estações DC-01 e DC-07.
+// 16/10/2026), estações DC01 e DC07.
 // =============================================================================
 import 'package:alerta_cheia_itajai/domain/models/cotas_estacao.dart';
 import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
@@ -14,13 +14,13 @@ import 'package:alerta_cheia_itajai/domain/regras/classificador_estagio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  // Cotas reais da DC-01 (Rio Itajaí-Açu - ICMBio/CEPSUL).
+  // Cotas reais da DC01 (Rio Itajaí-Açu - ICMBio/CEPSUL).
   final cotasDc01 = CotasEstacao(atencao: 1.21, alerta: 1.61, emergencia: 1.75);
 
-  // Cotas reais da DC-07 (Ribeirão da Murta - Portal).
+  // Cotas reais da DC07 (Ribeirão da Murta - Portal).
   final cotasDc07 = CotasEstacao(atencao: 1.00, alerta: 1.40, emergencia: 1.50);
 
-  group('classificarEstagio — DC-01', () {
+  group('classificarEstagio — DC01', () {
     // Tabela de casos: nível → estágio esperado.
     // É o equivalente ao @ParameterizedTest do JUnit: um teste por linha.
     // Regra combinada: ATINGIR a cota já muda o estágio (comparação "≥").
@@ -52,7 +52,7 @@ void main() {
   });
 
   group('classificarEstagio — cada estação tem suas cotas', () {
-    test('o mesmo nível (1,45 m) dá estágios diferentes em DC-01 e DC-07', () {
+    test('o mesmo nível (1,45 m) dá estágios diferentes em DC01 e DC07', () {
       expect(classificarEstagio(1.45, cotasDc01), EstagioAlerta.atencao);
       expect(classificarEstagio(1.45, cotasDc07), EstagioAlerta.alerta);
     });

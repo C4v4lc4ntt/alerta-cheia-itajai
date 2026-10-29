@@ -1,0 +1,260 @@
+{
+  "versao_esquema": 1,
+  "gerado_em": "2026-10-26T21:42:01+00:00",
+  "dados": {
+    "rios": [
+      {
+        "codigo": "DC01",
+        "nome": "Rio Itajaí-Açu - ICMBio/CEPSUL",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:31:36.062000+00:00",
+        "nivel_rio_m": 0.8,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:31:36.062000+00:00"
+          }
+        },
+        "tendencia": "descendo",
+        "situacao": "monitoramento",
+        "atencao_m": 1.21,
+        "alerta_m": 1.61,
+        "emergencia_m": 1.75
+      },
+      {
+        "codigo": "DC02",
+        "nome": "Rio Itajaí-Açu - Praça Celso Pereira da Silva",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:31:22.284000+00:00",
+        "nivel_rio_m": 1.55,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:31:22.284000+00:00"
+          }
+        },
+        "tendencia": "estavel",
+        "situacao": "monitoramento",
+        "atencao_m": 1.6,
+        "alerta_m": 2.0,
+        "emergencia_m": 2.5
+      },
+      {
+        "codigo": "DC03",
+        "nome": "Rio Itajaí-Mirim (canal retificado) - Captação SEMASA",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:30:10.051000+00:00",
+        "nivel_rio_m": 0.17,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:30:10.051000+00:00"
+          }
+        },
+        "tendencia": "descendo",
+        "situacao": "monitoramento",
+        "atencao_m": 1.48,
+        "alerta_m": 1.85,
+        "emergencia_m": 2.5
+      },
+      {
+        "codigo": "DC04",
+        "nome": "Rio Itajaí-Mirim (canal retificado e curso antigo) - Vitalmar Pescados",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:31:13.536000+00:00",
+        "nivel_rio_m": 0.91,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:31:13.536000+00:00"
+          }
+        },
+        "tendencia": "estavel",
+        "situacao": "monitoramento",
+        "atencao_m": 1.5,
+        "alerta_m": 1.85,
+        "emergencia_m": 2.25
+      },
+      {
+        "codigo": "DC05",
+        "nome": "Rio Itajaí-Mirim (curso antigo) - Propriedade privada",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:31:06.647000+00:00",
+        "nivel_rio_m": 1.2,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:31:06.647000+00:00"
+          }
+        },
+        "tendencia": "estavel",
+        "situacao": "monitoramento",
+        "atencao_m": 1.6,
+        "alerta_m": 2.2,
+        "emergencia_m": 3.0
+      },
+      {
+        "codigo": "DC06",
+        "nome": "Rio Itajaí-Mirim (curso antigo) - Itamirim Clube de Campo",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:30:56.400000+00:00",
+        "nivel_rio_m": 0.54,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:30:56.400000+00:00"
+          }
+        },
+        "tendencia": "descendo",
+        "situacao": "monitoramento",
+        "atencao_m": 1.5,
+        "alerta_m": 1.85,
+        "emergencia_m": 2.55
+      },
+      {
+        "codigo": "DC07",
+        "nome": "Ribeirão da Murta - Portal",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:30:35.858000+00:00",
+        "nivel_rio_m": 0.06,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:30:35.858000+00:00"
+          }
+        },
+        "tendencia": "descendo",
+        "situacao": "monitoramento",
+        "atencao_m": 1.0,
+        "alerta_m": 1.4,
+        "emergencia_m": 1.5
+      },
+      {
+        "codigo": "DC08",
+        "nome": "Ribeirão Canhanduba - Rua Benjamin Dagnoni",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:30:21.705000+00:00",
+        "nivel_rio_m": 1.11,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:30:21.705000+00:00"
+          }
+        },
+        "tendencia": "estavel",
+        "situacao": "monitoramento",
+        "atencao_m": 1.7,
+        "alerta_m": 2.3,
+        "emergencia_m": 2.89
+      },
+      {
+        "codigo": "DC09",
+        "nome": "Ribeirão da Murta - Ponte da Rua Lidia Puel Peixer",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:30:05.271000+00:00",
+        "nivel_rio_m": 0.83,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:30:05.271000+00:00"
+          }
+        },
+        "tendencia": "descendo",
+        "situacao": "monitoramento",
+        "atencao_m": 1.22,
+        "alerta_m": 1.42,
+        "emergencia_m": 1.62
+      },
+      {
+        "codigo": "DC10",
+        "nome": "Rio Itajaí-Mirim – Bairro Limoeiro",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:30:16.206000+00:00",
+        "nivel_rio_m": 3.4,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:30:16.206000+00:00"
+          }
+        },
+        "tendencia": "estavel",
+        "situacao": "monitoramento",
+        "atencao_m": 8.0,
+        "alerta_m": 9.0,
+        "emergencia_m": 10.0
+      },
+      {
+        "codigo": "DC11",
+        "nome": "Rio Itajaí-Açú – Santa Regina (Volta de Cima)",
+        "municipio": "Itajaí",
+        "medido_em": "2026-10-26T21:30:10.458000+00:00",
+        "nivel_rio_m": 2.4,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:30:10.458000+00:00"
+          }
+        },
+        "tendencia": "descendo",
+        "situacao": "monitoramento",
+        "atencao_m": 3.0,
+        "alerta_m": 4.0,
+        "emergencia_m": 5.0
+      },
+      {
+        "codigo": "DCSC-00013",
+        "nome": "Estação MKS DCSC-00013",
+        "municipio": "Rio do Sul",
+        "medido_em": "2026-10-26T21:40:00+00:00",
+        "nivel_rio_m": 3.48,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:40:00+00:00"
+          }
+        },
+        "tendencia": "estavel",
+        "situacao": "monitoramento",
+        "atencao_m": 5.0,
+        "alerta_m": 6.0,
+        "emergencia_m": 7.0
+      },
+      {
+        "codigo": "DCSC-00019",
+        "nome": "Estação MKS DCSC-00019",
+        "municipio": "Brusque",
+        "medido_em": "2026-10-26T21:35:00+00:00",
+        "nivel_rio_m": 1.39,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:35:00+00:00"
+          }
+        },
+        "tendencia": "estavel",
+        "situacao": "monitoramento",
+        "atencao_m": 3.5,
+        "alerta_m": 5.0,
+        "emergencia_m": 6.0
+      },
+      {
+        "codigo": "PADKND",
+        "nome": "Estação AlertaBlu PADKND",
+        "municipio": "Blumenau",
+        "medido_em": "2026-10-26T21:35:00+00:00",
+        "nivel_rio_m": 2.51,
+        "qualidade": {
+          "nivel_rio_m": {
+            "estado": "atual",
+            "medido_em": "2026-10-26T21:35:00+00:00"
+          }
+        },
+        "tendencia": "estavel",
+        "situacao": "monitoramento",
+        "atencao_m": 4.0,
+        "alerta_m": 6.0,
+        "emergencia_m": 8.0
+      }
+    ]
+  }
+}

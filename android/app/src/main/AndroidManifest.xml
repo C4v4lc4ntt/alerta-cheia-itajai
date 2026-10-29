@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necessária para buscar os níveis no portal da Defesa Civil (D07/D09).
+         Os manifestos de debug/profile já têm; sem esta linha, o APK de
+         release (validação com moradores) não acessaria a internet. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="alerta_cheia_itajai"
+        android:label="Alerta Cheia"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
