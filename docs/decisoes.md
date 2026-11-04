@@ -67,6 +67,23 @@ da medição e as cotas de Atenção, Alerta e Emergência.
 **Por quê:** a validação com moradores fica mais convincente com o rio de verdade, e
 as cotas acompanham a fonte oficial em vez de ficarem fixas no código.
 
+## D08 · Estágio do bairro com estações estimadas (revisada em 04/11/2026)
+**Contexto:** não há fonte oficial da relação entre estações e bairros. Ela foi
+pedida à Defesa Civil por e-mail em 20/10/2026, com prazo até 02/11/2026, e não
+houve resposta. O número D08 estava reservado e entra já com esta revisão.
+**Decisão:**
+- O bairro mostra o estágio oficial da cidade.
+- Como complemento, a tela mostra as estações mais próximas do bairro, estimadas
+  pelos limites dos bairros (OpenStreetMap) e pelas coordenadas das estações do
+  `app.json`, conferidas com notícias de alagamentos, com link e data.
+- A tela avisa que a proximidade é uma estimativa, não um dado oficial.
+- O bairro nunca aparece com estágio menor que o da cidade.
+- Se a Defesa Civil enviar a relação oficial, ela substitui a estimativa.
+**Por quê:** ajuda o morador a acompanhar os rios perto de casa sem apresentar
+uma estimativa como informação oficial e sem reduzir o alerta.
+**Testes:** o estágio do bairro é igual ao da cidade, mesmo quando as estações
+próximas estão em estágio menor; a estimativa não muda o estágio mostrado.
+
 ## D09 · Pacote http para ler o portal (26/10/2026)
 **Contexto:** a D07 exige baixar o `app.json` do portal da Defesa Civil.
 **Decisão:** usar o pacote `http` (1.6.0), mantido pela equipe do Dart.
@@ -109,3 +126,12 @@ porque o problema é local.
 **Por quê:** o app é complemento dos canais oficiais (D01) e não pode parecer
 uma declaração da Defesa Civil; o título diz exatamente o que o app calculou,
 sem perder o aviso quando qualquer rio sobe.
+
+## D12 · A primeira leitura não notifica (04/11/2026)
+**Contexto:** a notificação do RF02 compara o estágio atual com o anterior (D06).
+Na primeira leitura depois da instalação, não existe estágio anterior.
+**Decisão:** a primeira leitura só guarda o estágio como ponto de partida. A
+notificação começa na primeira mudança.
+**Por quê:** sem estágio anterior não há mudança, e quem instala já vê o estágio
+na tela, com o app aberto.
+**Testes:** sem estágio anterior não notifica em nenhum dos quatro estágios.
