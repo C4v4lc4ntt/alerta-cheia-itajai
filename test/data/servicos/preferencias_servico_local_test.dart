@@ -9,7 +9,6 @@ import 'package:alerta_cheia_itajai/data/servicos/preferencias_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/preferencias_servico_local.dart';
 import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Só os métodos usados são escritos; qualquer outro falha no teste.
