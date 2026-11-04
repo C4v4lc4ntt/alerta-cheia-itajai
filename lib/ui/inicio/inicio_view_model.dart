@@ -15,7 +15,7 @@ import '../../domain/models/estacao.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/models/leitura_nivel.dart';
 import '../../domain/models/tabua_mare.dart';
-import '../../domain/regras/classificador_estagio.dart';
+import '../../domain/regras/avaliar_leituras.dart';
 import '../../domain/regras/estagio_mais_grave.dart';
 
 /// O que a tela Início está mostrando.
@@ -76,13 +76,6 @@ final class InicioPronto extends EstadoInicio {
   final TabuaMare? tabuaMare;
 }
 
-/// Uma estação com a leitura e o estágio calculado dela.
-typedef SituacaoEstacao = ({
-  Estacao estacao,
-  LeituraNivel leitura,
-  EstagioAlerta estagio,
-});
-
 /// ViewModel da tela Início: busca os dados e calcula o estágio da cidade.
 class InicioViewModel extends ChangeNotifier {
   /// Cria o ViewModel com os serviços injetados (nos testes, mocks).
@@ -115,19 +108,7 @@ class InicioViewModel extends ChangeNotifier {
     try {
       final consultadoEm = agora();
       final leituras = await niveis.buscarLeituras();
-      final estacoesPorCodigo = {
-        for (final estacao in catalogoEstacoes) estacao.codigo: estacao,
-      };
-      final avaliadas = <SituacaoEstacao>[
-        for (final leitura in leituras)
-          // Estação fora do catálogo é ignorada.
-          if (estacoesPorCodigo[leitura.codigoEstacao] case final estacao?)
-            (
-              estacao: estacao,
-              leitura: leitura,
-              estagio: classificarEstagio(leitura.nivel, estacao.cotas),
-            ),
-      ];
+      final avaliadas = avaliarLeituras(leituras, catalogoEstacoes);
 
       // Sem nenhuma estação reconhecida não há base para dizer o estágio.
       if (avaliadas.isEmpty) {

@@ -5,7 +5,7 @@
 // ETAPA VERDE: código mínimo para os testes passarem.
 // =============================================================================
 import '../../domain/models/estagio_alerta.dart';
-import '../../domain/regras/classificador_estagio.dart';
+import '../../domain/regras/avaliar_leituras.dart';
 import '../../domain/regras/deve_notificar.dart';
 import '../../domain/regras/estagio_mais_grave.dart';
 import '../catalogo/catalogo_estacoes.dart';
@@ -64,15 +64,9 @@ class VerificadorEstagio {
   // Estágio mais grave entre as estações do catálogo (D02); null se nenhuma
   // leitura for reconhecida.
   Future<EstagioAlerta?> _buscarEstagioAtual() async {
-    final cotasPorCodigo = {
-      for (final estacao in catalogoEstacoes) estacao.codigo: estacao.cotas,
-    };
     final leituras = await niveis.buscarLeituras();
-    final estagios = [
-      for (final leitura in leituras)
-        if (cotasPorCodigo[leitura.codigoEstacao] case final cotas?)
-          classificarEstagio(leitura.nivel, cotas),
-    ];
-    return estagios.isEmpty ? null : estagioMaisGrave(estagios);
+    final avaliadas = avaliarLeituras(leituras, catalogoEstacoes);
+    if (avaliadas.isEmpty) return null;
+    return estagioMaisGrave([for (final item in avaliadas) item.estagio]);
   }
 }
