@@ -175,3 +175,18 @@ implementação.
 **Testes:** a verificação é testada com serviços falsos: estágio mudou → notifica e
 salva; mesmo estágio → não notifica; primeira leitura → só salva (D12); falha na
 busca → mantém o último estágio e não notifica.
+
+## D15 · Avisos ligados ao bairro escolhido (04/11/2026)
+**Contexto:** o RF02 fala em avisar quando o estágio do bairro escolhido mudar, e a
+D08 faz todo bairro mostrar o estágio da cidade. Faltava definir o que acontece
+sem bairro escolhido e com mais de um.
+**Decisão:**
+- Sem bairro escolhido, o app não consulta o portal para avisar, não notifica e não
+  liga a verificação em segundo plano.
+- Com bairros escolhidos, cada mudança gera uma notificação por bairro.
+- A tela Início convida o morador a escolher um bairro.
+**Por quê:** segue o RF02, pede a permissão quando ela faz sentido e evita consultas
+ao portal sem necessidade. O morador que acompanha mais de um lugar recebe o aviso
+de cada um.
+**Testes:** sem bairro não busca nem notifica; com dois bairros, uma mudança gera
+duas notificações, uma com o nome de cada bairro.
