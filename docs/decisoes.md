@@ -78,6 +78,8 @@ houve resposta. O número D08 estava reservado e entra já com esta revisão.
   `app.json`, conferidas com notícias de alagamentos, com link e data.
 - A tela avisa que a proximidade é uma estimativa, não um dado oficial.
 - O bairro nunca aparece com estágio menor que o da cidade.
+- A estimativa fica em uma tabela pronta (bairro → estações), calculada fora do
+  app, com fonte e data no catálogo. O app não guarda os limites dos bairros.
 - Se a Defesa Civil enviar a relação oficial, ela substitui a estimativa.
 **Por quê:** ajuda o morador a acompanhar os rios perto de casa sem apresentar
 uma estimativa como informação oficial e sem reduzir o alerta.
@@ -135,3 +137,20 @@ notificação começa na primeira mudança.
 **Por quê:** sem estágio anterior não há mudança, e quem instala já vê o estágio
 na tela, com o app aberto.
 **Testes:** sem estágio anterior não notifica em nenhum dos quatro estágios.
+
+## D13 · Mapa centralizado na posição do morador (04/11/2026)
+**Contexto:** o morador quer abrir o mapa e ver os alagamentos perto de onde está.
+O RF04 previa só exibir os pontos ativos, e o GPS era opcional.
+**Decisão:**
+- Ao abrir o mapa, o app pede a localização e explica para quê.
+- Com permissão, o GPS é usado uma vez para centralizar o mapa. A posição não é
+  guardada nem enviada.
+- Sem permissão, o mapa abre em Itajaí com todos os pontos ativos, e o restante
+  do app continua funcionando.
+- O acesso ao GPS fica atrás de uma interface em `data/servicos/`. O pacote
+  `geolocator` será justificado e confirmado no RF04.
+- O geofencing em segundo plano continua fora (D06).
+**Por quê:** mostra primeiro o que importa para quem está na rua, sem coletar a
+posição do morador (LGPD) e sem impedir o uso de quem negar a permissão.
+**Testes:** com permissão, o mapa centraliza na posição recebida; sem permissão ou
+com falha no GPS, centraliza em Itajaí.
