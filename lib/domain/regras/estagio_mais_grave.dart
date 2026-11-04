@@ -1,7 +1,7 @@
 // =============================================================================
 // estagio_mais_grave.dart — regra do RF01/D02: entre vários estágios, devolve
-// o mais grave. Usada para a cidade (todas as estações) e, no RF02, para o
-// bairro (só as estações ligadas a ele).
+// o mais grave. Usada para a cidade (todas as estações). No RF02, o bairro
+// mostra esse mesmo estágio (D08).
 //
 // ETAPA VERDE: código mínimo para os testes passarem.
 // =============================================================================
