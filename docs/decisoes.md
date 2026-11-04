@@ -154,3 +154,24 @@ O RF04 previa só exibir os pontos ativos, e o GPS era opcional.
 posição do morador (LGPD) e sem impedir o uso de quem negar a permissão.
 **Testes:** com permissão, o mapa centraliza na posição recebida; sem permissão ou
 com falha no GPS, centraliza em Itajaí.
+
+## D14 · Verificação do estágio com o app fechado (04/11/2026)
+**Contexto:** a notificação local da D06 depende de o app conferir o estágio. Sem
+verificação em segundo plano, o morador só seria avisado ao abrir o app.
+**Decisão:**
+- No Android, o `workmanager` pede uma verificação periódica, com intervalo mínimo
+  de 15 minutos. O horário é decidido pelo sistema e pode atrasar.
+- O app também verifica ao abrir e ao voltar para o primeiro plano, usando a mesma
+  lógica.
+- No iOS, a verificação acontece só com o app em uso. O autor não tem iPhone para
+  testar, a Apple não garante quando a tarefa roda e a validação usa APK.
+- O app avisa que a notificação pode atrasar e não substitui os canais oficiais.
+- Quem participar da validação deve deixar a bateria do app em "Sem restrições".
+- Limite: se a notificação com o app fechado não funcionar no Samsung até
+  10/11/2026, o app volta a verificar só em uso, com o limite declarado.
+**Por quê:** é a opção sem servidor que mantém a D06 e cabe no calendário. Serviço
+em primeiro plano e push ficaram de fora pelo incômodo ao usuário e pelo custo de
+implementação.
+**Testes:** a verificação é testada com serviços falsos: estágio mudou → notifica e
+salva; mesmo estágio → não notifica; primeira leitura → só salva (D12); falha na
+busca → mantém o último estágio e não notifica.
