@@ -6,6 +6,7 @@
 // =============================================================================
 import 'package:flutter/foundation.dart';
 
+import '../../data/catalogo/catalogo_estacoes.dart';
 import '../../data/servicos/notificador_servico.dart';
 import '../../data/servicos/preferencias_servico.dart';
 import '../../domain/models/bairro.dart';
@@ -39,6 +40,13 @@ class AjustesViewModel extends ChangeNotifier {
 
   /// Diz se o bairro de nome [nome] está marcado.
   bool estaEscolhido(String nome) => _escolhidos.contains(nome);
+
+  /// Estações próximas do [bairro], com o código e o rio de cada uma.
+  String estacoesDe(Bairro bairro) => [
+    for (final codigo in bairro.estacoesProximas)
+      for (final estacao in catalogoEstacoes)
+        if (estacao.codigo == codigo) '${estacao.codigo} · ${estacao.rio}',
+  ].join(', ');
 
   /// Diz se há bairro escolhido, mas o sistema não deixa notificar.
   bool get permissaoNegada => _permissaoNegada;

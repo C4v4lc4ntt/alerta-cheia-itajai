@@ -8,14 +8,28 @@
 // passam por aqui: eles montam o app com serviços falsos (ver app_test.dart).
 // =============================================================================
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'data/catalogo/catalogo_bairros.dart';
 import 'data/servicos/boletim_servico_defesa_civil.dart';
 import 'data/servicos/nivel_rio_servico_defesa_civil.dart';
+import 'data/servicos/notificador_servico_local.dart';
+import 'data/servicos/preferencias_servico_local.dart';
+import 'ui/ajustes/ajustes_view_model.dart';
 import 'ui/inicio/inicio_view_model.dart';
 
-void main() {
+Future<void> main() async {
+  // Necessário porque o plugin de notificações é usado antes do runApp.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final notificador = NotificadorServicoLocal(
+    plugin: FlutterLocalNotificationsPlugin(),
+  );
+  await notificador.iniciar();
+
   // Um só cliente HTTP, compartilhado pelos dois serviços (D09).
   final cliente = http.Client();
 
@@ -25,6 +39,13 @@ void main() {
       inicioViewModel: InicioViewModel(
         niveis: NivelRioServicoDefesaCivil(cliente: cliente),
         boletins: BoletimServicoDefesaCivil(cliente: cliente),
+      ),
+      ajustesViewModel: AjustesViewModel(
+        preferencias: PreferenciasServicoLocal(
+          armazem: SharedPreferencesAsync(),
+        ),
+        notificador: notificador,
+        catalogo: catalogoBairros,
       ),
     ),
   );

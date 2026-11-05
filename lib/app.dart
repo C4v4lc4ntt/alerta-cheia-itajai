@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'core/tema/tema_app.dart';
 import 'ui/ajuda/ajuda_view.dart';
 import 'ui/ajustes/ajustes_view.dart';
+import 'ui/ajustes/ajustes_view_model.dart';
 import 'ui/inicio/inicio_view.dart';
 import 'ui/inicio/inicio_view_model.dart';
 import 'ui/mapa/mapa_view.dart';
@@ -19,11 +20,18 @@ import 'ui/mapa/mapa_view.dart';
 /// É "Stateless" (sem estado): só monta o MaterialApp com o tema e a tela
 /// inicial. Quem guarda estado (qual aba está aberta) é [NavegacaoPrincipal].
 class AlertaCheiaApp extends StatelessWidget {
-  /// Cria o app com o ViewModel da tela Início já montado (ver main.dart).
-  const AlertaCheiaApp({super.key, required this.inicioViewModel});
+  /// Cria o app com os ViewModels já montados (ver main.dart).
+  const AlertaCheiaApp({
+    super.key,
+    required this.inicioViewModel,
+    required this.ajustesViewModel,
+  });
 
   /// ViewModel entregue à tela Início.
   final InicioViewModel inicioViewModel;
+
+  /// ViewModel entregue à tela Ajustes.
+  final AjustesViewModel ajustesViewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +40,10 @@ class AlertaCheiaApp extends StatelessWidget {
       title: 'Alerta Cheia Itajaí',
       debugShowCheckedModeBanner: false, // esconde a faixa "DEBUG" no canto
       theme: TemaApp.claro(),
-      home: NavegacaoPrincipal(inicioViewModel: inicioViewModel),
+      home: NavegacaoPrincipal(
+        inicioViewModel: inicioViewModel,
+        ajustesViewModel: ajustesViewModel,
+      ),
     );
   }
 }
@@ -42,11 +53,18 @@ class AlertaCheiaApp extends StatelessWidget {
 /// É "Stateful" (com estado) porque precisa lembrar qual aba está
 /// selecionada e se redesenhar quando o usuário toca em outra.
 class NavegacaoPrincipal extends StatefulWidget {
-  /// Cria a navegação com o ViewModel da tela Início.
-  const NavegacaoPrincipal({super.key, required this.inicioViewModel});
+  /// Cria a navegação com os ViewModels das telas.
+  const NavegacaoPrincipal({
+    super.key,
+    required this.inicioViewModel,
+    required this.ajustesViewModel,
+  });
 
   /// ViewModel entregue à tela Início.
   final InicioViewModel inicioViewModel;
+
+  /// ViewModel entregue à tela Ajustes.
+  final AjustesViewModel ajustesViewModel;
 
   @override
   State<NavegacaoPrincipal> createState() => _NavegacaoPrincipalState();
@@ -65,7 +83,7 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
       InicioView(viewModel: widget.inicioViewModel),
       const MapaView(),
       const AjudaView(),
-      const AjustesView(),
+      AjustesView(viewModel: widget.ajustesViewModel),
     ];
 
     return Scaffold(
