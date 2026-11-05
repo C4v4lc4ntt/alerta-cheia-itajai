@@ -22,10 +22,20 @@ class PreferenciasFalsas implements PreferenciasServico {
   Future<List<String>> lerBairrosEscolhidos() async => bairros;
 
   @override
+  Future<void> salvarBairrosEscolhidos(List<String> bairros) async {
+    this.bairros = bairros;
+  }
+
+  @override
   Future<EstagioAlerta?> lerUltimoEstagio() async => ultimoEstagio;
 
   @override
   Future<void> salvarUltimoEstagio(EstagioAlerta estagio) async {
     ultimoEstagio = estagio;
+  }
+
+  @override
+  Future<void> apagarUltimoEstagio() async {
+    ultimoEstagio = null;
   }
 }

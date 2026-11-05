@@ -28,6 +28,11 @@ class PreferenciasServicoLocal implements PreferenciasServico {
   }
 
   @override
+  Future<void> salvarBairrosEscolhidos(List<String> bairros) {
+    return armazem.setStringList(_chaveBairros, bairros);
+  }
+
+  @override
   Future<EstagioAlerta?> lerUltimoEstagio() async {
     final nome = await armazem.getString(_chaveUltimoEstagio);
     // asNameMap() é o mapa nome → valor do enum; desconhecido vira null.
@@ -37,5 +42,10 @@ class PreferenciasServicoLocal implements PreferenciasServico {
   @override
   Future<void> salvarUltimoEstagio(EstagioAlerta estagio) {
     return armazem.setString(_chaveUltimoEstagio, estagio.name);
+  }
+
+  @override
+  Future<void> apagarUltimoEstagio() {
+    return armazem.remove(_chaveUltimoEstagio);
   }
 }

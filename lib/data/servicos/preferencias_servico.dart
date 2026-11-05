@@ -11,9 +11,15 @@ abstract interface class PreferenciasServico {
   /// Nomes dos bairros escolhidos; lista vazia se não houver nenhum.
   Future<List<String>> lerBairrosEscolhidos();
 
+  /// Guarda os [bairros] escolhidos, substituindo a escolha anterior.
+  Future<void> salvarBairrosEscolhidos(List<String> bairros);
+
   /// Último estágio conhecido; null antes da primeira leitura.
   Future<EstagioAlerta?> lerUltimoEstagio();
 
   /// Guarda o [estagio] como o último conhecido.
   Future<void> salvarUltimoEstagio(EstagioAlerta estagio);
+
+  /// Esquece o último estágio; a próxima leitura volta a ser a primeira (D12).
+  Future<void> apagarUltimoEstagio();
 }
