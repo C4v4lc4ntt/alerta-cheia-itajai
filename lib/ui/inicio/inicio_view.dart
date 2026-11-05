@@ -15,10 +15,17 @@ import 'tabua_mare_view.dart';
 /// oficial e tábua de marés.
 class InicioView extends StatefulWidget {
   /// Cria a tela com o [viewModel] injetado.
-  const InicioView({super.key, required this.viewModel});
+  const InicioView({
+    super.key,
+    required this.viewModel,
+    required this.aoEscolherBairro,
+  });
 
   /// Quem busca os dados e decide o que a tela mostra.
   final InicioViewModel viewModel;
+
+  /// Chamado ao tocar em "Escolher bairro"; quem troca de aba é o app.
+  final VoidCallback aoEscolherBairro;
 
   @override
   State<InicioView> createState() => _InicioViewState();
@@ -64,6 +71,7 @@ class _InicioViewState extends State<InicioView> {
             final InicioPronto pronto => _Pronto(
               estado: pronto,
               aoAtualizar: widget.viewModel.carregar,
+              aoEscolherBairro: widget.aoEscolherBairro,
             ),
           },
         ),
@@ -72,11 +80,47 @@ class _InicioViewState extends State<InicioView> {
   }
 }
 
+/// Cartão que convida o morador a escolher um bairro (D15).
+class _ConviteBairro extends StatelessWidget {
+  const _ConviteBairro({required this.aoEscolherBairro});
+
+  final VoidCallback aoEscolherBairro;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Escolha um bairro para receber avisos quando o estágio mudar.',
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: aoEscolherBairro,
+              child: const Text('Escolher bairro'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Conteúdo da tela quando os dados chegaram.
 class _Pronto extends StatelessWidget {
-  const _Pronto({required this.estado, required this.aoAtualizar});
+  const _Pronto({
+    required this.estado,
+    required this.aoAtualizar,
+    required this.aoEscolherBairro,
+  });
 
   final InicioPronto estado;
+
+  /// Chamado ao tocar em "Escolher bairro".
+  final VoidCallback aoEscolherBairro;
 
   /// Chamado quando o morador puxa a tela para baixo.
   final Future<void> Function() aoAtualizar;
@@ -98,6 +142,10 @@ class _Pronto extends StatelessWidget {
         children: [
           _CartaoEstagio(estagio: estado.estagioCidade),
           const SizedBox(height: 12),
+          if (estado.semBairroEscolhido) ...[
+            _ConviteBairro(aoEscolherBairro: aoEscolherBairro),
+            const SizedBox(height: 12),
+          ],
           Card(
             child: ListTile(
               title: Text('${estacao.codigo} · ${estacao.rio}'),

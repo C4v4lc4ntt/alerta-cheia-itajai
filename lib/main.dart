@@ -30,6 +30,11 @@ Future<void> main() async {
   );
   await notificador.iniciar();
 
+  // As duas telas leem os bairros escolhidos do mesmo lugar.
+  final preferencias = PreferenciasServicoLocal(
+    armazem: SharedPreferencesAsync(),
+  );
+
   // Um só cliente HTTP, compartilhado pelos dois serviços (D09).
   final cliente = http.Client();
 
@@ -39,11 +44,10 @@ Future<void> main() async {
       inicioViewModel: InicioViewModel(
         niveis: NivelRioServicoDefesaCivil(cliente: cliente),
         boletins: BoletimServicoDefesaCivil(cliente: cliente),
+        preferencias: preferencias,
       ),
       ajustesViewModel: AjustesViewModel(
-        preferencias: PreferenciasServicoLocal(
-          armazem: SharedPreferencesAsync(),
-        ),
+        preferencias: preferencias,
         notificador: notificador,
         catalogo: catalogoBairros,
       ),

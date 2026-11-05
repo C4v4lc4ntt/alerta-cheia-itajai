@@ -80,7 +80,11 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
     // Lista das telas, na mesma ordem dos botões da barra inferior.
     // Deixou de ser "const" no ciclo 7: a tela Início recebe o ViewModel.
     final telas = <Widget>[
-      InicioView(viewModel: widget.inicioViewModel),
+      InicioView(
+        viewModel: widget.inicioViewModel,
+        // D15: o convite leva à aba Ajustes, onde o bairro é escolhido.
+        aoEscolherBairro: () => setState(() => _abaAtual = 3),
+      ),
       const MapaView(),
       const AjudaView(),
       AjustesView(viewModel: widget.ajustesViewModel),

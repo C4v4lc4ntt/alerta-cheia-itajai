@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/catalogo/catalogo_estacoes.dart';
 import '../../data/servicos/boletim_servico.dart';
 import '../../data/servicos/nivel_rio_servico.dart';
+import '../../data/servicos/preferencias_servico.dart';
 import '../../domain/models/boletim_oficial.dart';
 import '../../domain/models/estacao.dart';
 import '../../domain/models/estagio_alerta.dart';
@@ -44,6 +45,7 @@ final class InicioPronto extends EstadoInicio {
     required this.estacaoMaisCritica,
     required this.leituraMaisCritica,
     required this.estacoes,
+    required this.semBairroEscolhido,
     this.boletim,
     this.tabuaMare,
   });
@@ -69,6 +71,9 @@ final class InicioPronto extends EstadoInicio {
   /// Todas as estações reconhecidas, da mais crítica para a menos crítica.
   final List<SituacaoEstacao> estacoes;
 
+  /// Se a tela deve convidar o morador a escolher um bairro (D15).
+  final bool semBairroEscolhido;
+
   /// Boletim oficial; null se não houver ou se o portal falhar (D10).
   final BoletimOficial? boletim;
 
@@ -83,6 +88,7 @@ class InicioViewModel extends ChangeNotifier {
   InicioViewModel({
     required this.niveis,
     required this.boletins,
+    required this.preferencias,
     DateTime Function()? agora,
   }) : agora = agora ?? DateTime.now;
 
@@ -94,6 +100,9 @@ class InicioViewModel extends ChangeNotifier {
 
   /// De onde vêm o boletim oficial e a tábua de marés.
   final BoletimServico boletins;
+
+  /// Onde ficam os bairros escolhidos.
+  final PreferenciasServico preferencias;
 
   EstadoInicio _estado = InicioCarregando();
 
@@ -128,6 +137,7 @@ class InicioViewModel extends ChangeNotifier {
           estacaoMaisCritica: critica.estacao,
           leituraMaisCritica: critica.leitura,
           estacoes: ordenadas,
+          semBairroEscolhido: await _semBairroEscolhido(),
           boletim: await _semFalhar(boletins.buscarBoletim),
           tabuaMare: await _semFalhar(boletins.buscarTabuaMare),
         );
@@ -153,6 +163,12 @@ class InicioViewModel extends ChangeNotifier {
   // Quanto da cota de Atenção o nível já alcançou (1,0 = na cota).
   static double _proporcaoDaCota(SituacaoEstacao situacao) =>
       situacao.leitura.nivel / situacao.estacao.cotas.atencao;
+
+  // O convite é complemento: se a leitura falhar, a tela segue sem ele.
+  Future<bool> _semBairroEscolhido() async {
+    final bairros = await _semFalhar(preferencias.lerBairrosEscolhidos);
+    return bairros?.isEmpty ?? false;
+  }
 
   // Boletim e tábua são complemento: se falharem, a tela segue sem eles.
   Future<T?> _semFalhar<T>(Future<T?> Function() buscar) async {
