@@ -89,6 +89,7 @@ class InicioViewModel extends ChangeNotifier {
     required this.niveis,
     required this.boletins,
     required this.preferencias,
+    required this.verificar,
     DateTime Function()? agora,
   }) : agora = agora ?? DateTime.now;
 
@@ -103,6 +104,9 @@ class InicioViewModel extends ChangeNotifier {
 
   /// Onde ficam os bairros escolhidos.
   final PreferenciasServico preferencias;
+
+  /// Confere se o estágio mudou e avisa os bairros escolhidos (D14).
+  final Future<void> Function() verificar;
 
   EstadoInicio _estado = InicioCarregando();
 
@@ -146,6 +150,9 @@ class InicioViewModel extends ChangeNotifier {
       _estado = InicioErro(_mensagemErro);
     }
     notifyListeners();
+
+    // Por último: quem abre o app vê o estágio sem esperar a verificação.
+    await verificar();
   }
 
   static const _mensagemErro =

@@ -17,6 +17,7 @@ import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'data/catalogo/catalogo_bairros.dart';
+import 'data/repositorios/verificador_estagio.dart';
 import 'data/servicos/agendador_verificacao_local.dart';
 import 'data/servicos/boletim_servico_defesa_civil.dart';
 import 'data/servicos/nivel_rio_servico_defesa_civil.dart';
@@ -41,14 +42,23 @@ Future<void> main() async {
 
   // Um só cliente HTTP, compartilhado pelos dois serviços (D09).
   final cliente = http.Client();
+  final niveis = NivelRioServicoDefesaCivil(cliente: cliente);
+
+  // A mesma verificação do segundo plano, com o app em uso (D14).
+  final verificador = VerificadorEstagio(
+    niveis: niveis,
+    preferencias: preferencias,
+    notificador: notificador,
+  );
 
   // runApp recebe o widget raiz e o desenha na tela.
   runApp(
     AlertaCheiaApp(
       inicioViewModel: InicioViewModel(
-        niveis: NivelRioServicoDefesaCivil(cliente: cliente),
+        niveis: niveis,
         boletins: BoletimServicoDefesaCivil(cliente: cliente),
         preferencias: preferencias,
+        verificar: verificador.verificar,
       ),
       ajustesViewModel: AjustesViewModel(
         preferencias: preferencias,
