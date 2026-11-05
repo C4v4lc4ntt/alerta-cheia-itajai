@@ -175,6 +175,11 @@ implementação.
 **Testes:** a verificação é testada com serviços falsos: estágio mudou → notifica e
 salva; mesmo estágio → não notifica; primeira leitura → só salva (D12); falha na
 busca → mantém o último estágio e não notifica.
+**Adendo (05/11/2026):** para conferir o aviso no celular, um modo de teste alterna
+o estágio sozinho: Monitoramento na primeira meia hora de cada hora e Emergência na
+segunda. Ele só existe com `--dart-define=MODO_TESTE=alternado` e é ignorado em
+release, então o APK dos moradores usa sempre o portal. Testes: limites da virada
+(minutos 0, 29, 30 e 59), modo desconhecido e release ignorando o modo.
 
 ## D15 · Avisos ligados ao bairro escolhido (04/11/2026)
 **Contexto:** o RF02 fala em avisar quando o estágio do bairro escolhido mudar, e a
