@@ -22,6 +22,18 @@ class NotificadorFalso implements NotificadorServico {
   /// Quando true, simula a falha ao mostrar a notificação.
   bool deveFalhar = false;
 
+  /// Resposta simulada do sistema ao pedido de permissão.
+  bool permissaoConcedida = true;
+
+  /// Quantas vezes a permissão foi pedida.
+  int pedidosDePermissao = 0;
+
+  @override
+  Future<bool> pedirPermissao() async {
+    pedidosDePermissao++;
+    return permissaoConcedida;
+  }
+
   @override
   Future<void> notificarMudanca({
     required String bairro,

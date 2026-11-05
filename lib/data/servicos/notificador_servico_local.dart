@@ -33,6 +33,23 @@ class NotificadorServicoLocal implements NotificadorServico {
   }
 
   @override
+  Future<bool> pedirPermissao() async {
+    // O plugin só devolve a parte do sistema em que o app está rodando.
+    final android = plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android != null) {
+      return await android.requestNotificationsPermission() ?? false;
+    }
+    final ios = plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    return await ios?.requestPermissions(alert: true, sound: true) ?? false;
+  }
+
+  @override
   Future<void> notificarMudanca({
     required String bairro,
     required EstagioAlerta anterior,

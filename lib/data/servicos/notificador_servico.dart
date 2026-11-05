@@ -8,6 +8,10 @@ import '../../domain/models/estagio_alerta.dart';
 
 /// Mostra as notificações locais do app.
 abstract interface class NotificadorServico {
+  /// Pede ao sistema a permissão para notificar e diz se ela foi concedida.
+  /// Se o morador já respondeu, o sistema responde sem mostrar nada.
+  Future<bool> pedirPermissao();
+
   /// Avisa que o estágio do [bairro] mudou de [anterior] para [atual].
   Future<void> notificarMudanca({
     required String bairro,

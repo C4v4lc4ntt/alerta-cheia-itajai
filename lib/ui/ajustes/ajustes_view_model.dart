@@ -6,22 +6,30 @@
 // =============================================================================
 import 'package:flutter/foundation.dart';
 
+import '../../data/servicos/notificador_servico.dart';
 import '../../data/servicos/preferencias_servico.dart';
 import '../../domain/models/bairro.dart';
 
 /// Estado da escolha de bairros.
 class AjustesViewModel extends ChangeNotifier {
-  /// Cria o ViewModel com as [preferencias] e o [catalogo] injetados.
-  AjustesViewModel({required this.preferencias, required List<Bairro> catalogo})
-    : _catalogoOrdenado = [...catalogo]
-        ..sort((a, b) => _semAcentos(a.nome).compareTo(_semAcentos(b.nome)));
+  /// Cria o ViewModel com os serviços e o [catalogo] injetados.
+  AjustesViewModel({
+    required this.preferencias,
+    required this.notificador,
+    required List<Bairro> catalogo,
+  }) : _catalogoOrdenado = [...catalogo]
+         ..sort((a, b) => _semAcentos(a.nome).compareTo(_semAcentos(b.nome)));
 
   /// Onde os bairros escolhidos ficam guardados.
   final PreferenciasServico preferencias;
 
+  /// Quem pede ao sistema a permissão para notificar.
+  final NotificadorServico notificador;
+
   final List<Bairro> _catalogoOrdenado;
   List<String> _escolhidos = const [];
   String _busca = '';
+  bool _permissaoNegada = false;
 
   /// Bairros que combinam com a busca, em ordem alfabética.
   List<Bairro> get bairrosVisiveis => [
@@ -32,10 +40,15 @@ class AjustesViewModel extends ChangeNotifier {
   /// Diz se o bairro de nome [nome] está marcado.
   bool estaEscolhido(String nome) => _escolhidos.contains(nome);
 
-  /// Lê do celular os bairros já escolhidos.
+  /// Diz se há bairro escolhido, mas o sistema não deixa notificar.
+  bool get permissaoNegada => _permissaoNegada;
+
+  /// Lê do celular os bairros já escolhidos e confere a permissão, porque o
+  /// morador pode tê-la desligado nos ajustes do celular.
   Future<void> carregar() async {
     _escolhidos = await preferencias.lerBairrosEscolhidos();
     notifyListeners();
+    if (_escolhidos.isNotEmpty) await _conferirPermissao();
   }
 
   /// Filtra a lista pelo [texto] digitado.
@@ -46,6 +59,7 @@ class AjustesViewModel extends ChangeNotifier {
 
   /// Marca o bairro de nome [nome], ou desmarca se já estiver marcado.
   Future<void> alternar(String nome) async {
+    final marcou = !estaEscolhido(nome);
     final novos = estaEscolhido(nome)
         ? [..._escolhidos.where((escolhido) => escolhido != nome)]
         : [..._escolhidos, nome];
@@ -56,6 +70,16 @@ class AjustesViewModel extends ChangeNotifier {
     if (novos.isEmpty) await preferencias.apagarUltimoEstagio();
 
     _escolhidos = novos;
+    if (novos.isEmpty) _permissaoNegada = false;
+    notifyListeners();
+    if (marcou) await _conferirPermissao();
+  }
+
+  // Pede a permissão e só avisa a tela se a resposta mudar o que ela mostra.
+  Future<void> _conferirPermissao() async {
+    final negada = !await notificador.pedirPermissao();
+    if (negada == _permissaoNegada) return;
+    _permissaoNegada = negada;
     notifyListeners();
   }
 
