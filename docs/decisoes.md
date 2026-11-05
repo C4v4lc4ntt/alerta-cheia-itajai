@@ -190,3 +190,8 @@ ao portal sem necessidade. O morador que acompanha mais de um lugar recebe o avi
 de cada um.
 **Testes:** sem bairro não busca nem notifica; com dois bairros, uma mudança gera
 duas notificações, uma com o nome de cada bairro.
+**Adendo (05/11/2026):** ao desmarcar o último bairro, o app apaga o último estágio
+salvo. Sem bairro não há verificação, então esse estágio ficaria velho e geraria um
+aviso falso de mudança quando o morador voltasse a escolher um bairro. A primeira
+leitura depois disso só salva, como na D12. Teste: desmarcar o último bairro apaga
+o estágio; com outro bairro ainda marcado, ele continua salvo.
