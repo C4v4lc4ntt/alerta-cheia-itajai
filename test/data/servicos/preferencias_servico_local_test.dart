@@ -26,6 +26,16 @@ class _ArmazemFalso extends Fake implements SharedPreferencesAsync {
   Future<void> setString(String key, String value) async {
     dados[key] = value;
   }
+
+  @override
+  Future<void> setStringList(String key, List<String> value) async {
+    dados[key] = value;
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    dados.remove(key);
+  }
 }
 
 void main() {
@@ -46,6 +56,39 @@ void main() {
       armazem.dados['bairros_escolhidos'] = ['Murta', 'Centro'];
 
       expect(await preferencias.lerBairrosEscolhidos(), ['Murta', 'Centro']);
+    });
+
+    test('salvar e ler de volta os bairros', () async {
+      await preferencias.salvarBairrosEscolhidos(['Murta', 'Centro']);
+
+      expect(await preferencias.lerBairrosEscolhidos(), ['Murta', 'Centro']);
+    });
+
+    // Salvar substitui a escolha anterior: não acumula bairros desmarcados.
+    test('salvar de novo substitui os bairros', () async {
+      await preferencias.salvarBairrosEscolhidos(['Murta', 'Centro']);
+
+      await preferencias.salvarBairrosEscolhidos(['Centro']);
+
+      expect(await preferencias.lerBairrosEscolhidos(), ['Centro']);
+    });
+
+    test('salvar lista vazia → nenhum bairro escolhido', () async {
+      await preferencias.salvarBairrosEscolhidos(['Murta']);
+
+      await preferencias.salvarBairrosEscolhidos(const []);
+
+      expect(await preferencias.lerBairrosEscolhidos(), isEmpty);
+    });
+
+    // Sem bairro não há verificação; um estágio antigo não pode virar a base
+    // de um aviso quando o morador voltar a escolher um bairro (adendo à D15).
+    test('apagar o último estágio → volta a null', () async {
+      await preferencias.salvarUltimoEstagio(EstagioAlerta.atencao);
+
+      await preferencias.apagarUltimoEstagio();
+
+      expect(await preferencias.lerUltimoEstagio(), isNull);
     });
 
     test('sem estágio salvo → null', () async {
