@@ -19,6 +19,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../apoio/preferencias_falsas.dart';
+
 class NivelRioServicoMock extends Mock implements NivelRioServico {}
 
 class BoletimServicoMock extends Mock implements BoletimServico {}
@@ -62,14 +64,25 @@ void main() {
   });
 
   // Monta a tela com o ViewModel de verdade e espera carregar.
-  Future<void> abrirTela(WidgetTester tester) async {
+  // Por padrão há um bairro escolhido, então o convite não aparece.
+  Future<void> abrirTela(
+    WidgetTester tester, {
+    List<String> bairros = const ['Murta'],
+    VoidCallback? aoEscolherBairro,
+  }) async {
     final viewModel = InicioViewModel(
       niveis: niveis,
       boletins: boletins,
+      preferencias: PreferenciasFalsas(bairros: bairros),
       agora: () => as2145,
     );
     await tester.pumpWidget(
-      MaterialApp(home: InicioView(viewModel: viewModel)),
+      MaterialApp(
+        home: InicioView(
+          viewModel: viewModel,
+          aoEscolherBairro: aoEscolherBairro ?? () {},
+        ),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -80,10 +93,16 @@ void main() {
     // Um Future que nunca termina: a tela fica parada em "carregando".
     when(() => niveis.buscarLeituras())
         .thenAnswer((_) => Completer<List<LeituraNivel>>().future);
-    final viewModel = InicioViewModel(niveis: niveis, boletins: boletins);
+    final viewModel = InicioViewModel(
+      niveis: niveis,
+      boletins: boletins,
+      preferencias: PreferenciasFalsas(bairros: ['Murta']),
+    );
 
     await tester.pumpWidget(
-      MaterialApp(home: InicioView(viewModel: viewModel)),
+      MaterialApp(
+        home: InicioView(viewModel: viewModel, aoEscolherBairro: () {}),
+      ),
     );
     await tester.pump();
 
@@ -246,5 +265,36 @@ void main() {
 
     expect(find.text('DC07 · Ribeirão da Murta'), findsOneWidget);
     expect(find.text('0,06 m'), findsOneWidget);
+  });
+
+  // D15: a tela Início convida quem ainda não escolheu um bairro.
+  group('convite para escolher um bairro', () {
+    const convite =
+        'Escolha um bairro para receber avisos quando o estágio mudar.';
+
+    testWidgets('sem bairro escolhido → mostra o convite', (tester) async {
+      await abrirTela(tester, bairros: const []);
+
+      expect(find.text(convite), findsOneWidget);
+    });
+
+    testWidgets('com bairro escolhido → não mostra o convite', (tester) async {
+      await abrirTela(tester);
+
+      expect(find.text(convite), findsNothing);
+    });
+
+    testWidgets('tocar em Escolher bairro chama a navegação', (tester) async {
+      var toques = 0;
+      await abrirTela(
+        tester,
+        bairros: const [],
+        aoEscolherBairro: () => toques++,
+      );
+
+      await tester.tap(find.text('Escolher bairro'));
+
+      expect(toques, 1);
+    });
   });
 }

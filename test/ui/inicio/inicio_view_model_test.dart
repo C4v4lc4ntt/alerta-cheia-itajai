@@ -16,9 +16,19 @@ import 'package:alerta_cheia_itajai/ui/inicio/inicio_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../apoio/preferencias_falsas.dart';
+
 class NivelRioServicoMock extends Mock implements NivelRioServico {}
 
 class BoletimServicoMock extends Mock implements BoletimServico {}
+
+// Simula a falha ao ler o armazenamento do celular.
+class _PreferenciasQueFalham extends PreferenciasFalsas {
+  @override
+  Future<List<String>> lerBairrosEscolhidos() async {
+    throw StateError('Falha simulada ao ler os bairros.');
+  }
+}
 
 void main() {
   late NivelRioServicoMock niveis;
@@ -55,7 +65,11 @@ void main() {
         .thenAnswer((_) async => leiturasNormais);
     when(() => boletins.buscarBoletim()).thenAnswer((_) async => boletim);
     when(() => boletins.buscarTabuaMare()).thenAnswer((_) async => tabua);
-    viewModel = InicioViewModel(niveis: niveis, boletins: boletins);
+    viewModel = InicioViewModel(
+      niveis: niveis,
+      boletins: boletins,
+      preferencias: PreferenciasFalsas(bairros: ['Murta']),
+    );
   });
 
   // Atalho: o estado depois de carregar, já como "pronto".
@@ -171,6 +185,7 @@ void main() {
       viewModel = InicioViewModel(
         niveis: niveis,
         boletins: boletins,
+        preferencias: PreferenciasFalsas(bairros: ['Murta']),
         agora: () => as2145,
       );
 
@@ -197,6 +212,38 @@ void main() {
         'DC07',
       ]);
       expect(estado.estacoes.first.estagio, EstagioAlerta.alerta);
+    });
+  });
+
+  // D15: a tela Início convida quem ainda não escolheu um bairro.
+  group('convite para escolher um bairro', () {
+    Future<InicioPronto> carregarCom(PreferenciasFalsas preferencias) async {
+      viewModel = InicioViewModel(
+        niveis: niveis,
+        boletins: boletins,
+        preferencias: preferencias,
+      );
+      await viewModel.carregar();
+      return viewModel.estado as InicioPronto;
+    }
+
+    test('sem bairro escolhido → convida', () async {
+      final pronto = await carregarCom(PreferenciasFalsas());
+
+      expect(pronto.semBairroEscolhido, isTrue);
+    });
+
+    test('com bairro escolhido → não convida', () async {
+      final pronto = await carregarCom(PreferenciasFalsas(bairros: ['Murta']));
+
+      expect(pronto.semBairroEscolhido, isFalse);
+    });
+
+    // O convite é complemento: uma falha não pode derrubar a tela Início.
+    test('falha ao ler os bairros → mostra os dados sem convidar', () async {
+      final pronto = await carregarCom(_PreferenciasQueFalham());
+
+      expect(pronto.semBairroEscolhido, isFalse);
     });
   });
 }

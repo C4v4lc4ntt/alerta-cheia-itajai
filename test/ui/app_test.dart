@@ -48,7 +48,11 @@ void main() {
     when(() => boletins.buscarBoletim()).thenAnswer((_) async => null);
     when(() => boletins.buscarTabuaMare()).thenAnswer((_) async => null);
     app = AlertaCheiaApp(
-      inicioViewModel: InicioViewModel(niveis: niveis, boletins: boletins),
+      inicioViewModel: InicioViewModel(
+        niveis: niveis,
+        boletins: boletins,
+        preferencias: PreferenciasFalsas(),
+      ),
       ajustesViewModel: AjustesViewModel(
         preferencias: PreferenciasFalsas(),
         notificador: NotificadorFalso(),
@@ -89,6 +93,16 @@ void main() {
       await tester.pumpWidget(app);
 
       await tester.tap(find.widgetWithText(NavigationDestination, 'Ajustes'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bairros e avisos'), findsOneWidget);
+    });
+
+    testWidgets('Escolher bairro leva à aba Ajustes', (tester) async {
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Escolher bairro'));
       await tester.pumpAndSettle();
 
       expect(find.text('Bairros e avisos'), findsOneWidget);
