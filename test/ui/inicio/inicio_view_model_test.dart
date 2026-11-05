@@ -5,6 +5,8 @@
 // Os serviços (borda do app) viram mocks do mocktail; as regras do domínio
 // (classificar e estágio mais grave) rodam de verdade (CLAUDE.md).
 // =============================================================================
+import 'dart:async';
+
 import 'package:alerta_cheia_itajai/data/servicos/boletim_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/nivel_rio_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/portal_defesa_civil.dart';
@@ -69,6 +71,7 @@ void main() {
       niveis: niveis,
       boletins: boletins,
       preferencias: PreferenciasFalsas(bairros: ['Murta']),
+      verificar: () async {},
     );
   });
 
@@ -186,6 +189,7 @@ void main() {
         niveis: niveis,
         boletins: boletins,
         preferencias: PreferenciasFalsas(bairros: ['Murta']),
+        verificar: () async {},
         agora: () => as2145,
       );
 
@@ -222,6 +226,7 @@ void main() {
         niveis: niveis,
         boletins: boletins,
         preferencias: preferencias,
+        verificar: () async {},
       );
       await viewModel.carregar();
       return viewModel.estado as InicioPronto;
@@ -244,6 +249,53 @@ void main() {
       final pronto = await carregarCom(_PreferenciasQueFalham());
 
       expect(pronto.semBairroEscolhido, isFalse);
+    });
+  });
+
+  // D14: o app também verifica ao abrir e ao voltar para o primeiro plano. A
+  // tela chama carregar() nesses dois momentos.
+  group('verificação do estágio', () {
+    late int verificacoes;
+
+    InicioViewModel criar({Future<void> Function()? verificar}) {
+      verificacoes = 0;
+      return InicioViewModel(
+        niveis: niveis,
+        boletins: boletins,
+        preferencias: PreferenciasFalsas(bairros: ['Murta']),
+        verificar:
+            verificar ??
+            () async {
+              verificacoes++;
+            },
+      );
+    }
+
+    test('carregar → verifica uma vez', () async {
+      await criar().carregar();
+
+      expect(verificacoes, 1);
+    });
+
+    // A verificação tem a própria consulta; a falha da tela não a impede.
+    test('portal fora do ar na tela → verifica assim mesmo', () async {
+      when(() => niveis.buscarLeituras()).thenThrow(Exception('fora do ar'));
+
+      await criar().carregar();
+
+      expect(verificacoes, 1);
+    });
+
+    // Quem abre o app precisa ver o estágio sem esperar a verificação.
+    test('verificação demorada não segura a tela', () async {
+      final demorada = Completer<void>();
+      final modelo = criar(verificar: () => demorada.future);
+
+      unawaited(modelo.carregar());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(modelo.estado, isA<InicioPronto>());
+      demorada.complete();
     });
   });
 }

@@ -53,6 +53,7 @@ void main() {
         niveis: niveis,
         boletins: boletins,
         preferencias: PreferenciasFalsas(),
+        verificar: () async {},
       ),
       ajustesViewModel: AjustesViewModel(
         preferencias: PreferenciasFalsas(),

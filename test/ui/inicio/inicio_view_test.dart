@@ -74,6 +74,7 @@ void main() {
       niveis: niveis,
       boletins: boletins,
       preferencias: PreferenciasFalsas(bairros: bairros),
+      verificar: () async {},
       agora: () => as2145,
     );
     await tester.pumpWidget(
@@ -97,6 +98,7 @@ void main() {
       niveis: niveis,
       boletins: boletins,
       preferencias: PreferenciasFalsas(bairros: ['Murta']),
+      verificar: () async {},
     );
 
     await tester.pumpWidget(
