@@ -15,6 +15,11 @@ import 'package:mocktail/mocktail.dart';
 
 class _PluginMock extends Mock implements FlutterLocalNotificationsPlugin {}
 
+class _AndroidMock extends Mock
+    implements AndroidFlutterLocalNotificationsPlugin {}
+
+class _IosMock extends Mock implements IOSFlutterLocalNotificationsPlugin {}
+
 void main() {
   late _PluginMock plugin;
   late NotificadorServicoLocal notificador;
@@ -138,6 +143,58 @@ void main() {
       expect(ajustes.iOS!.requestAlertPermission, isFalse);
       expect(ajustes.iOS!.requestBadgePermission, isFalse);
       expect(ajustes.iOS!.requestSoundPermission, isFalse);
+    });
+  });
+
+  group('pedirPermissao', () {
+    // Simula em qual sistema o app está: o plugin só devolve o daquele sistema.
+    void noAndroid(_AndroidMock? android) {
+      when(
+        () => plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >(),
+      ).thenReturn(android);
+    }
+
+    void noIos(_IosMock? ios) {
+      when(
+        () => plugin
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >(),
+      ).thenReturn(ios);
+    }
+
+    // Tabela de casos: a resposta do Android e o que o app entende dela.
+    // O null significa que o sistema não respondeu: na dúvida, não concedida.
+    const respostas = <bool?, bool>{true: true, false: false, null: false};
+    respostas.forEach((resposta, esperado) {
+      test('Android responde $resposta → $esperado', () async {
+        final android = _AndroidMock();
+        noAndroid(android);
+        when(android.requestNotificationsPermission)
+            .thenAnswer((_) async => resposta);
+
+        expect(await notificador.pedirPermissao(), esperado);
+      });
+    });
+
+    test('iPhone → pede alerta e som', () async {
+      final ios = _IosMock();
+      noAndroid(null);
+      noIos(ios);
+      when(() => ios.requestPermissions(alert: true, sound: true))
+          .thenAnswer((_) async => true);
+
+      expect(await notificador.pedirPermissao(), isTrue);
+    });
+
+    test('outro sistema → não concedida', () async {
+      noAndroid(null);
+      noIos(null);
+
+      expect(await notificador.pedirPermissao(), isFalse);
     });
   });
 }

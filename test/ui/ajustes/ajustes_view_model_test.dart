@@ -9,6 +9,7 @@ import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
 import 'package:alerta_cheia_itajai/ui/ajustes/ajustes_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../apoio/notificador_falso.dart';
 import '../../apoio/preferencias_falsas.dart';
 
 // Fora de ordem de propósito: quem ordena é o ViewModel.
@@ -22,6 +23,7 @@ final _catalogo = [
 
 void main() {
   late PreferenciasFalsas preferencias;
+  late NotificadorFalso notificador;
   late AjustesViewModel viewModel;
 
   List<String> nomesVisiveis() => [
@@ -30,8 +32,10 @@ void main() {
 
   setUp(() {
     preferencias = PreferenciasFalsas();
+    notificador = NotificadorFalso();
     viewModel = AjustesViewModel(
       preferencias: preferencias,
+      notificador: notificador,
       catalogo: _catalogo,
     );
   });
@@ -166,6 +170,85 @@ void main() {
       await viewModel.alternar('Murta');
 
       expect(preferencias.ultimoEstagio, EstagioAlerta.atencao);
+    });
+  });
+
+  group('permissão de notificação', () {
+    test('marcar um bairro → pede a permissão', () async {
+      await viewModel.alternar('Murta');
+
+      expect(notificador.pedidosDePermissao, 1);
+    });
+
+    test('desmarcar um bairro → não pede a permissão', () async {
+      preferencias.bairros = ['Murta', 'Centro'];
+      await viewModel.carregar();
+      final pedidosAntes = notificador.pedidosDePermissao;
+
+      await viewModel.alternar('Murta');
+
+      expect(notificador.pedidosDePermissao, pedidosAntes);
+    });
+
+    test('começa sem o aviso de permissão negada', () {
+      expect(viewModel.permissaoNegada, isFalse);
+    });
+
+    // O morador pode ativar depois nos ajustes do celular: a escolha fica.
+    test('permissão negada → mantém o bairro e mostra o aviso', () async {
+      notificador.permissaoConcedida = false;
+
+      await viewModel.alternar('Murta');
+
+      expect(preferencias.bairros, ['Murta']);
+      expect(viewModel.estaEscolhido('Murta'), isTrue);
+      expect(viewModel.permissaoNegada, isTrue);
+    });
+
+    // A tela desenha a marca antes da resposta e o aviso depois dela.
+    test('permissão negada → avisa a tela de novo', () async {
+      notificador.permissaoConcedida = false;
+      var avisos = 0;
+      viewModel.addListener(() => avisos++);
+
+      await viewModel.alternar('Murta');
+
+      expect(avisos, 2);
+    });
+
+    test('permissão concedida depois → o aviso some', () async {
+      notificador.permissaoConcedida = false;
+      await viewModel.alternar('Murta');
+
+      notificador.permissaoConcedida = true;
+      await viewModel.alternar('Centro');
+
+      expect(viewModel.permissaoNegada, isFalse);
+    });
+
+    test('desmarcar o último bairro → o aviso some', () async {
+      notificador.permissaoConcedida = false;
+      await viewModel.alternar('Murta');
+
+      await viewModel.alternar('Murta');
+
+      expect(viewModel.permissaoNegada, isFalse);
+    });
+
+    // O morador pode ter desligado as notificações nos ajustes do celular.
+    test('carregar com bairro salvo → confere a permissão', () async {
+      preferencias.bairros = ['Murta'];
+      notificador.permissaoConcedida = false;
+
+      await viewModel.carregar();
+
+      expect(viewModel.permissaoNegada, isTrue);
+    });
+
+    test('carregar sem bairro → não pede a permissão', () async {
+      await viewModel.carregar();
+
+      expect(notificador.pedidosDePermissao, 0);
     });
   });
 }
