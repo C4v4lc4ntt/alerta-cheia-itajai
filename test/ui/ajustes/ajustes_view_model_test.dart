@@ -9,6 +9,7 @@ import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
 import 'package:alerta_cheia_itajai/ui/ajustes/ajustes_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../apoio/agendador_falso.dart';
 import '../../apoio/notificador_falso.dart';
 import '../../apoio/preferencias_falsas.dart';
 
@@ -24,6 +25,7 @@ final _catalogo = [
 void main() {
   late PreferenciasFalsas preferencias;
   late NotificadorFalso notificador;
+  late AgendadorFalso agendador;
   late AjustesViewModel viewModel;
 
   List<String> nomesVisiveis() => [
@@ -33,9 +35,11 @@ void main() {
   setUp(() {
     preferencias = PreferenciasFalsas();
     notificador = NotificadorFalso();
+    agendador = AgendadorFalso();
     viewModel = AjustesViewModel(
       preferencias: preferencias,
       notificador: notificador,
+      agendador: agendador,
       catalogo: _catalogo,
     );
   });
@@ -170,6 +174,41 @@ void main() {
       await viewModel.alternar('Murta');
 
       expect(preferencias.ultimoEstagio, EstagioAlerta.atencao);
+    });
+  });
+
+  // D15: a verificação em segundo plano só fica ligada com bairro escolhido.
+  group('verificação em segundo plano', () {
+    test('marcar um bairro → liga a verificação', () async {
+      await viewModel.alternar('Murta');
+
+      expect(agendador.ligada, isTrue);
+    });
+
+    test('desmarcar o último bairro → desliga a verificação', () async {
+      await viewModel.alternar('Murta');
+
+      await viewModel.alternar('Murta');
+
+      expect(agendador.ligada, isFalse);
+    });
+
+    test('ainda com bairro escolhido → continua ligada', () async {
+      await viewModel.alternar('Murta');
+      await viewModel.alternar('Centro');
+
+      await viewModel.alternar('Murta');
+
+      expect(agendador.ligada, isTrue);
+    });
+
+    // A tarefa não depende da resposta do morador ao pedido de permissão.
+    test('permissão negada → a verificação fica ligada', () async {
+      notificador.permissaoConcedida = false;
+
+      await viewModel.alternar('Murta');
+
+      expect(agendador.ligada, isTrue);
     });
   });
 

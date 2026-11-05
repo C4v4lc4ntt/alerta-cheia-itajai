@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../apoio/agendador_falso.dart';
 import '../apoio/notificador_falso.dart';
 import '../apoio/preferencias_falsas.dart';
 
@@ -56,6 +57,7 @@ void main() {
       ajustesViewModel: AjustesViewModel(
         preferencias: PreferenciasFalsas(),
         notificador: NotificadorFalso(),
+        agendador: AgendadorFalso(),
         catalogo: catalogoBairros,
       ),
     );

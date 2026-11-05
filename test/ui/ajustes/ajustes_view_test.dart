@@ -10,6 +10,7 @@ import 'package:alerta_cheia_itajai/ui/ajustes/ajustes_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../apoio/agendador_falso.dart';
 import '../../apoio/notificador_falso.dart';
 import '../../apoio/preferencias_falsas.dart';
 
@@ -39,6 +40,7 @@ void main() {
     viewModel = AjustesViewModel(
       preferencias: preferencias,
       notificador: notificador,
+      agendador: AgendadorFalso(),
       catalogo: _catalogo,
     );
   });
