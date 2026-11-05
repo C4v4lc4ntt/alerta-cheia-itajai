@@ -7,6 +7,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../data/catalogo/catalogo_estacoes.dart';
+import '../../data/servicos/agendador_verificacao.dart';
 import '../../data/servicos/notificador_servico.dart';
 import '../../data/servicos/preferencias_servico.dart';
 import '../../domain/models/bairro.dart';
@@ -17,6 +18,7 @@ class AjustesViewModel extends ChangeNotifier {
   AjustesViewModel({
     required this.preferencias,
     required this.notificador,
+    required this.agendador,
     required List<Bairro> catalogo,
   }) : _catalogoOrdenado = [...catalogo]
          ..sort((a, b) => _semAcentos(a.nome).compareTo(_semAcentos(b.nome)));
@@ -26,6 +28,9 @@ class AjustesViewModel extends ChangeNotifier {
 
   /// Quem pede ao sistema a permissão para notificar.
   final NotificadorServico notificador;
+
+  /// Quem liga e desliga a verificação em segundo plano (D15).
+  final AgendadorVerificacao agendador;
 
   final List<Bairro> _catalogoOrdenado;
   List<String> _escolhidos = const [];
@@ -75,7 +80,12 @@ class AjustesViewModel extends ChangeNotifier {
     await preferencias.salvarBairrosEscolhidos(novos);
     // Adendo à D15: sem bairro não há verificação, e o estágio guardado
     // ficaria velho. A próxima leitura volta a ser a primeira (D12).
-    if (novos.isEmpty) await preferencias.apagarUltimoEstagio();
+    if (novos.isEmpty) {
+      await preferencias.apagarUltimoEstagio();
+      await agendador.desligar();
+    } else {
+      await agendador.ligar();
+    }
 
     _escolhidos = novos;
     if (novos.isEmpty) _permissaoNegada = false;

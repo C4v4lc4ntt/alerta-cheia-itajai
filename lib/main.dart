@@ -7,13 +7,17 @@
 // construtor do Spring, só que feita "à mão", sem framework. Os testes não
 // passam por aqui: eles montam o app com serviços falsos (ver app_test.dart).
 // =============================================================================
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'data/catalogo/catalogo_bairros.dart';
+import 'data/servicos/agendador_verificacao_local.dart';
 import 'data/servicos/boletim_servico_defesa_civil.dart';
 import 'data/servicos/nivel_rio_servico_defesa_civil.dart';
 import 'data/servicos/notificador_servico_local.dart';
@@ -49,6 +53,10 @@ Future<void> main() async {
       ajustesViewModel: AjustesViewModel(
         preferencias: preferencias,
         notificador: notificador,
+        agendador: AgendadorVerificacaoLocal(
+          workmanager: Workmanager(),
+          ehAndroid: Platform.isAndroid,
+        ),
         catalogo: catalogoBairros,
       ),
     ),
