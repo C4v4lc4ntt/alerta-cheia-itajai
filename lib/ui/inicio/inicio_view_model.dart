@@ -7,16 +7,22 @@
 // =============================================================================
 import 'package:flutter/foundation.dart';
 
+import '../../data/catalogo/catalogo_bairros.dart';
 import '../../data/catalogo/catalogo_estacoes.dart';
 import '../../data/servicos/boletim_servico.dart';
 import '../../data/servicos/nivel_rio_servico.dart';
+import '../../data/servicos/preferencias_servico.dart';
 import '../../domain/models/boletim_oficial.dart';
 import '../../domain/models/estacao.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/models/leitura_nivel.dart';
 import '../../domain/models/tabua_mare.dart';
-import '../../domain/regras/classificador_estagio.dart';
+import '../../domain/regras/avaliar_leituras.dart';
 import '../../domain/regras/estagio_mais_grave.dart';
+import '../../domain/regras/mais_critica_primeiro.dart';
+
+/// Bairro escolhido com as estações próximas que têm leitura (D08, D16).
+typedef CartaoBairro = ({String nome, List<SituacaoEstacao> estacoes});
 
 /// O que a tela Início está mostrando.
 sealed class EstadoInicio {}
@@ -44,6 +50,9 @@ final class InicioPronto extends EstadoInicio {
     required this.estacaoMaisCritica,
     required this.leituraMaisCritica,
     required this.estacoes,
+    required this.semBairroEscolhido,
+    required this.bairros,
+    required this.maisCriticaForaDosBairros,
     this.boletim,
     this.tabuaMare,
   });
@@ -69,19 +78,22 @@ final class InicioPronto extends EstadoInicio {
   /// Todas as estações reconhecidas, da mais crítica para a menos crítica.
   final List<SituacaoEstacao> estacoes;
 
+  /// Se a tela deve convidar o morador a escolher um bairro (D15).
+  final bool semBairroEscolhido;
+
+  /// Um cartão por bairro escolhido, na ordem da escolha (D16).
+  final List<CartaoBairro> bairros;
+
+  /// Se a [estacaoMaisCritica] ficou fora de todos os cartões de bairro, e a
+  /// tela precisa mostrá-la numa linha menor (D16).
+  final bool maisCriticaForaDosBairros;
+
   /// Boletim oficial; null se não houver ou se o portal falhar (D10).
   final BoletimOficial? boletim;
 
   /// Tábua de marés do mês; null se não houver ou se o portal falhar (D10).
   final TabuaMare? tabuaMare;
 }
-
-/// Uma estação com a leitura e o estágio calculado dela.
-typedef SituacaoEstacao = ({
-  Estacao estacao,
-  LeituraNivel leitura,
-  EstagioAlerta estagio,
-});
 
 /// ViewModel da tela Início: busca os dados e calcula o estágio da cidade.
 class InicioViewModel extends ChangeNotifier {
@@ -90,6 +102,8 @@ class InicioViewModel extends ChangeNotifier {
   InicioViewModel({
     required this.niveis,
     required this.boletins,
+    required this.preferencias,
+    required this.verificar,
     DateTime Function()? agora,
   }) : agora = agora ?? DateTime.now;
 
@@ -101,6 +115,12 @@ class InicioViewModel extends ChangeNotifier {
 
   /// De onde vêm o boletim oficial e a tábua de marés.
   final BoletimServico boletins;
+
+  /// Onde ficam os bairros escolhidos.
+  final PreferenciasServico preferencias;
+
+  /// Confere se o estágio mudou e avisa os bairros escolhidos (D14).
+  final Future<void> Function() verificar;
 
   EstadoInicio _estado = InicioCarregando();
 
@@ -115,26 +135,18 @@ class InicioViewModel extends ChangeNotifier {
     try {
       final consultadoEm = agora();
       final leituras = await niveis.buscarLeituras();
-      final estacoesPorCodigo = {
-        for (final estacao in catalogoEstacoes) estacao.codigo: estacao,
-      };
-      final avaliadas = <SituacaoEstacao>[
-        for (final leitura in leituras)
-          // Estação fora do catálogo é ignorada.
-          if (estacoesPorCodigo[leitura.codigoEstacao] case final estacao?)
-            (
-              estacao: estacao,
-              leitura: leitura,
-              estagio: classificarEstagio(leitura.nivel, estacao.cotas),
-            ),
-      ];
+      final avaliadas = avaliarLeituras(leituras, catalogoEstacoes);
 
       // Sem nenhuma estação reconhecida não há base para dizer o estágio.
       if (avaliadas.isEmpty) {
         _estado = InicioErro(_mensagemErro);
       } else {
-        final ordenadas = [...avaliadas]..sort(_maisCriticaPrimeiro);
+        final ordenadas = [...avaliadas]..sort(maisCriticaPrimeiro);
         final critica = ordenadas.first;
+        // Complemento: se a leitura falhar, a tela segue sem convite e sem
+        // cartões de bairro.
+        final escolhidos = await _semFalhar(preferencias.lerBairrosEscolhidos);
+        final cartoes = _cartoesDosBairros(escolhidos ?? const [], avaliadas);
         _estado = InicioPronto(
           estagioCidade: estagioMaisGrave([
             for (final avaliada in avaliadas) avaliada.estagio,
@@ -147,6 +159,11 @@ class InicioViewModel extends ChangeNotifier {
           estacaoMaisCritica: critica.estacao,
           leituraMaisCritica: critica.leitura,
           estacoes: ordenadas,
+          semBairroEscolhido: escolhidos?.isEmpty ?? false,
+          bairros: cartoes,
+          maisCriticaForaDosBairros:
+              cartoes.isNotEmpty &&
+              !cartoes.any((cartao) => _contem(cartao, critica.estacao.codigo)),
           boletim: await _semFalhar(boletins.buscarBoletim),
           tabuaMare: await _semFalhar(boletins.buscarTabuaMare),
         );
@@ -155,23 +172,39 @@ class InicioViewModel extends ChangeNotifier {
       _estado = InicioErro(_mensagemErro);
     }
     notifyListeners();
+
+    // Por último: quem abre o app vê o estágio sem esperar a verificação.
+    await verificar();
   }
 
   static const _mensagemErro =
       'Não foi possível obter os níveis da Defesa Civil. '
       'Tente de novo em instantes.';
 
-  // Mais crítica primeiro: maior estágio e, no empate, a mais perto da cota
-  // de Atenção (em proporção).
-  static int _maisCriticaPrimeiro(SituacaoEstacao a, SituacaoEstacao b) {
-    final porEstagio = b.estagio.index.compareTo(a.estagio.index);
-    if (porEstagio != 0) return porEstagio;
-    return _proporcaoDaCota(b).compareTo(_proporcaoDaCota(a));
+  // Um cartão por nome escolhido que existe no catálogo, com as estações na
+  // ordem do catálogo (da mais próxima). Estação sem leitura fica de fora.
+  static List<CartaoBairro> _cartoesDosBairros(
+    List<String> nomes,
+    List<SituacaoEstacao> avaliadas,
+  ) {
+    final porCodigo = {for (final item in avaliadas) item.estacao.codigo: item};
+    return [
+      for (final nome in nomes)
+        for (final bairro in catalogoBairros)
+          if (bairro.nome == nome)
+            (
+              nome: nome,
+              estacoes: [
+                // "?" só põe na lista quando a estação tem leitura.
+                for (final codigo in bairro.estacoesProximas)
+                  ?porCodigo[codigo],
+              ],
+            ),
+    ];
   }
 
-  // Quanto da cota de Atenção o nível já alcançou (1,0 = na cota).
-  static double _proporcaoDaCota(SituacaoEstacao situacao) =>
-      situacao.leitura.nivel / situacao.estacao.cotas.atencao;
+  static bool _contem(CartaoBairro cartao, String codigo) =>
+      cartao.estacoes.any((item) => item.estacao.codigo == codigo);
 
   // Boletim e tábua são complemento: se falharem, a tela segue sem eles.
   Future<T?> _semFalhar<T>(Future<T?> Function() buscar) async {

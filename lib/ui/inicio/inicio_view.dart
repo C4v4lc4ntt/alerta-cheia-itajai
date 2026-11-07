@@ -6,8 +6,9 @@
 // =============================================================================
 import 'package:flutter/material.dart';
 
-import '../../domain/models/estagio_alerta.dart';
 import '../comum/formatos.dart';
+import 'cartao_bairro.dart';
+import 'cartao_oficial.dart';
 import 'inicio_view_model.dart';
 import 'tabua_mare_view.dart';
 
@@ -15,10 +16,17 @@ import 'tabua_mare_view.dart';
 /// oficial e tábua de marés.
 class InicioView extends StatefulWidget {
   /// Cria a tela com o [viewModel] injetado.
-  const InicioView({super.key, required this.viewModel});
+  const InicioView({
+    super.key,
+    required this.viewModel,
+    required this.aoEscolherBairro,
+  });
 
   /// Quem busca os dados e decide o que a tela mostra.
   final InicioViewModel viewModel;
+
+  /// Chamado ao tocar em "Escolher bairro"; quem troca de aba é o app.
+  final VoidCallback aoEscolherBairro;
 
   @override
   State<InicioView> createState() => _InicioViewState();
@@ -64,6 +72,7 @@ class _InicioViewState extends State<InicioView> {
             final InicioPronto pronto => _Pronto(
               estado: pronto,
               aoAtualizar: widget.viewModel.carregar,
+              aoEscolherBairro: widget.aoEscolherBairro,
             ),
           },
         ),
@@ -72,11 +81,47 @@ class _InicioViewState extends State<InicioView> {
   }
 }
 
+/// Cartão que convida o morador a escolher um bairro (D15).
+class _ConviteBairro extends StatelessWidget {
+  const _ConviteBairro({required this.aoEscolherBairro});
+
+  final VoidCallback aoEscolherBairro;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Escolha um bairro para receber avisos quando o estágio mudar.',
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: aoEscolherBairro,
+              child: const Text('Escolher bairro'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Conteúdo da tela quando os dados chegaram.
 class _Pronto extends StatelessWidget {
-  const _Pronto({required this.estado, required this.aoAtualizar});
+  const _Pronto({
+    required this.estado,
+    required this.aoAtualizar,
+    required this.aoEscolherBairro,
+  });
 
   final InicioPronto estado;
+
+  /// Chamado ao tocar em "Escolher bairro".
+  final VoidCallback aoEscolherBairro;
 
   /// Chamado quando o morador puxa a tela para baixo.
   final Future<void> Function() aoAtualizar;
@@ -96,19 +141,42 @@ class _Pronto extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          _CartaoEstagio(estagio: estado.estagioCidade),
+          // D16: a situação oficial em destaque.
+          CartaoOficial(boletim: boletim, estagioCidade: estado.estagioCidade),
           const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              title: Text('${estacao.codigo} · ${estacao.rio}'),
-              subtitle: const Text('Estação mais perto da cota'),
-              trailing: Text(
-                formatarNivel(estado.leituraMaisCritica.nivel),
-                style: texto.headlineSmall,
+          if (estado.semBairroEscolhido) ...[
+            _ConviteBairro(aoEscolherBairro: aoEscolherBairro),
+            const SizedBox(height: 12),
+          ],
+          // Sem bairro, a estação mais crítica tem o cartão dela.
+          if (estado.bairros.isEmpty) ...[
+            Card(
+              child: ListTile(
+                title: Text(nomeDaEstacao(estacao)),
+                subtitle: const Text('Estação mais perto da cota'),
+                trailing: Text(
+                  formatarNivel(estado.leituraMaisCritica.nivel),
+                  style: texto.headlineSmall,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ],
+          // Com bairro, um cartão por bairro escolhido (D16).
+          for (final cartao in estado.bairros) ...[
+            CartaoBairroView(cartao: cartao),
+            const SizedBox(height: 12),
+          ],
+          // A estação mais grave nunca fica escondida.
+          if (estado.maisCriticaForaDosBairros) ...[
+            Text(
+              'Estação mais grave da cidade: ${nomeDaEstacao(estacao)} · '
+              '${formatarNivel(estado.leituraMaisCritica.nivel)} · '
+              '${nomeDoEstagio(estado.estacoes.first.estagio)}',
+              style: texto.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+          ],
           Card(
             child: ExpansionTile(
               title: Text('Todas as estações (${estado.estacoes.length})'),
@@ -122,9 +190,7 @@ class _Pronto extends StatelessWidget {
                       size: 14,
                       color: corDoEstagio(situacao.estagio),
                     ),
-                    title: Text(
-                      '${situacao.estacao.codigo} · ${situacao.estacao.rio}',
-                    ),
+                    title: Text(nomeDaEstacao(situacao.estacao)),
                     subtitle: Text(nomeDoEstagio(situacao.estagio)),
                     trailing: Text(formatarNivel(situacao.leitura.nivel)),
                   ),
@@ -139,9 +205,8 @@ class _Pronto extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // A situação já está no cartão grande (D16).
                     Text('Boletim da Defesa Civil', style: texto.labelMedium),
-                    const SizedBox(height: 4),
-                    Text(boletim.situacao, style: texto.titleMedium),
                     const SizedBox(height: 8),
                     Text(boletim.texto),
                   ],
@@ -184,88 +249,6 @@ class _Pronto extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Cartão grande com o estágio da cidade e a barra dos 4 estágios.
-class _CartaoEstagio extends StatelessWidget {
-  const _CartaoEstagio({required this.estagio});
-
-  final EstagioAlerta estagio;
-
-  @override
-  Widget build(BuildContext context) {
-    final texto = Theme.of(context).textTheme;
-
-    // O leitor de tela lê uma frase só, em vez do título e da barra soltos.
-    return Semantics(
-      container: true,
-      label: 'Estágio mais grave entre as estações: ${nomeDoEstagio(estagio)}',
-      child: ExcludeSemantics(
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: corDoEstagio(estagio),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                // D11: diz o que o app calcula; não é declaração oficial.
-                'Estágio mais grave entre as estações',
-                style: texto.labelMedium?.copyWith(
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              Text(
-                nomeDoEstagio(estagio),
-                style: texto.displaySmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  for (final etapa in EstagioAlerta.values)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: etapa.index <= estagio.index
-                                    ? Colors.white
-                                    : Colors.white38,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              rotuloCurtoDoEstagio(etapa),
-                              style: texto.labelSmall?.copyWith(
-                                color: Colors.white,
-                                fontWeight: etapa == estagio
-                                    ? FontWeight.w700
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

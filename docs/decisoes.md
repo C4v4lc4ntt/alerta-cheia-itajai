@@ -67,6 +67,25 @@ da medição e as cotas de Atenção, Alerta e Emergência.
 **Por quê:** a validação com moradores fica mais convincente com o rio de verdade, e
 as cotas acompanham a fonte oficial em vez de ficarem fixas no código.
 
+## D08 · Estágio do bairro com estações estimadas (revisada em 04/11/2026)
+**Contexto:** não há fonte oficial da relação entre estações e bairros. Ela foi
+pedida à Defesa Civil por e-mail em 20/10/2026, com prazo até 02/11/2026, e não
+houve resposta. O número D08 estava reservado e entra já com esta revisão.
+**Decisão:**
+- O bairro mostra o estágio oficial da cidade.
+- Como complemento, a tela mostra as estações mais próximas do bairro, estimadas
+  pelos limites dos bairros (OpenStreetMap) e pelas coordenadas das estações do
+  `app.json`, conferidas com notícias de alagamentos, com link e data.
+- A tela avisa que a proximidade é uma estimativa, não um dado oficial.
+- O bairro nunca aparece com estágio menor que o da cidade.
+- A estimativa fica em uma tabela pronta (bairro → estações), calculada fora do
+  app, com fonte e data no catálogo. O app não guarda os limites dos bairros.
+- Se a Defesa Civil enviar a relação oficial, ela substitui a estimativa.
+**Por quê:** ajuda o morador a acompanhar os rios perto de casa sem apresentar
+uma estimativa como informação oficial e sem reduzir o alerta.
+**Testes:** o estágio do bairro é igual ao da cidade, mesmo quando as estações
+próximas estão em estágio menor; a estimativa não muda o estágio mostrado.
+
 ## D09 · Pacote http para ler o portal (26/10/2026)
 **Contexto:** a D07 exige baixar o `app.json` do portal da Defesa Civil.
 **Decisão:** usar o pacote `http` (1.6.0), mantido pela equipe do Dart.
@@ -109,3 +128,102 @@ porque o problema é local.
 **Por quê:** o app é complemento dos canais oficiais (D01) e não pode parecer
 uma declaração da Defesa Civil; o título diz exatamente o que o app calculou,
 sem perder o aviso quando qualquer rio sobe.
+
+## D12 · A primeira leitura não notifica (04/11/2026)
+**Contexto:** a notificação do RF02 compara o estágio atual com o anterior (D06).
+Na primeira leitura depois da instalação, não existe estágio anterior.
+**Decisão:** a primeira leitura só guarda o estágio como ponto de partida. A
+notificação começa na primeira mudança.
+**Por quê:** sem estágio anterior não há mudança, e quem instala já vê o estágio
+na tela, com o app aberto.
+**Testes:** sem estágio anterior não notifica em nenhum dos quatro estágios.
+
+## D13 · Mapa centralizado na posição do morador (04/11/2026)
+**Contexto:** o morador quer abrir o mapa e ver os alagamentos perto de onde está.
+O RF04 previa só exibir os pontos ativos, e o GPS era opcional.
+**Decisão:**
+- Ao abrir o mapa, o app pede a localização e explica para quê.
+- Com permissão, o GPS é usado uma vez para centralizar o mapa. A posição não é
+  guardada nem enviada.
+- Sem permissão, o mapa abre em Itajaí com todos os pontos ativos, e o restante
+  do app continua funcionando.
+- O acesso ao GPS fica atrás de uma interface em `data/servicos/`. O pacote
+  `geolocator` será justificado e confirmado no RF04.
+- O geofencing em segundo plano continua fora (D06).
+**Por quê:** mostra primeiro o que importa para quem está na rua, sem coletar a
+posição do morador (LGPD) e sem impedir o uso de quem negar a permissão.
+**Testes:** com permissão, o mapa centraliza na posição recebida; sem permissão ou
+com falha no GPS, centraliza em Itajaí.
+
+## D14 · Verificação do estágio com o app fechado (04/11/2026)
+**Contexto:** a notificação local da D06 depende de o app conferir o estágio. Sem
+verificação em segundo plano, o morador só seria avisado ao abrir o app.
+**Decisão:**
+- No Android, o `workmanager` pede uma verificação periódica, com intervalo mínimo
+  de 15 minutos. O horário é decidido pelo sistema e pode atrasar.
+- O app também verifica ao abrir e ao voltar para o primeiro plano, usando a mesma
+  lógica.
+- No iOS, a verificação acontece só com o app em uso. O autor não tem iPhone para
+  testar, a Apple não garante quando a tarefa roda e a validação usa APK.
+- O app avisa que a notificação pode atrasar e não substitui os canais oficiais.
+- Quem participar da validação deve deixar a bateria do app em "Sem restrições".
+- Limite: se a notificação com o app fechado não funcionar no Samsung até
+  10/11/2026, o app volta a verificar só em uso, com o limite declarado.
+**Por quê:** é a opção sem servidor que mantém a D06 e cabe no calendário. Serviço
+em primeiro plano e push ficaram de fora pelo incômodo ao usuário e pelo custo de
+implementação.
+**Testes:** a verificação é testada com serviços falsos: estágio mudou → notifica e
+salva; mesmo estágio → não notifica; primeira leitura → só salva (D12); falha na
+busca → mantém o último estágio e não notifica.
+**Adendo (05/11/2026):** para conferir o aviso no celular, um modo de teste alterna
+o estágio sozinho: Monitoramento na primeira meia hora de cada hora e Emergência na
+segunda. Ele só existe com `--dart-define=MODO_TESTE=alternado` e é ignorado em
+release, então o APK dos moradores usa sempre o portal. Testes: limites da virada
+(minutos 0, 29, 30 e 59), modo desconhecido e release ignorando o modo.
+
+## D15 · Avisos ligados ao bairro escolhido (04/11/2026)
+**Contexto:** o RF02 fala em avisar quando o estágio do bairro escolhido mudar, e a
+D08 faz todo bairro mostrar o estágio da cidade. Faltava definir o que acontece
+sem bairro escolhido e com mais de um.
+**Decisão:**
+- Sem bairro escolhido, o app não consulta o portal para avisar, não notifica e não
+  liga a verificação em segundo plano.
+- Com bairros escolhidos, cada mudança gera uma notificação por bairro.
+- A tela Início convida o morador a escolher um bairro.
+**Por quê:** segue o RF02, pede a permissão quando ela faz sentido e evita consultas
+ao portal sem necessidade. O morador que acompanha mais de um lugar recebe o aviso
+de cada um.
+**Testes:** sem bairro não busca nem notifica; com dois bairros, uma mudança gera
+duas notificações, uma com o nome de cada bairro.
+**Adendo (05/11/2026):** ao desmarcar o último bairro, o app apaga o último estágio
+salvo. Sem bairro não há verificação, então esse estágio ficaria velho e geraria um
+aviso falso de mudança quando o morador voltasse a escolher um bairro. A primeira
+leitura depois disso só salva, como na D12. Teste: desmarcar o último bairro apaga
+o estágio; com outro bairro ainda marcado, ele continua salvo.
+
+## D16 · Destaque oficial e cartões do bairro na tela Início (07/11/2026)
+**Contexto:** em 07/11/2026, às 07:31, o boletim da Defesa Civil estava em
+"Atenção" e a DC07 (Ribeirão da Murta) marcava 1,53 m, acima da cota de Emergência
+(1,50 m). O cartão grande mostraria "Emergência", o que podia ser lido como alerta
+oficial. Além disso, o bairro escolhido não aparecia na tela Início.
+**Decisão:** revisa a D11 e a D08.
+- O cartão grande mostra a situação oficial da Defesa Civil, com a hora do boletim.
+  Sem boletim, mostra "Boletim oficial indisponível" e o estágio mais grave entre as
+  estações, como antes.
+- A cor do cartão segue o estágio de mesmo nome ("Normalidade" usa a cor de
+  Monitoramento). Código desconhecido: cor principal do app e o nome que veio.
+- Abaixo, um cartão por bairro escolhido, com as estações próximas (estimativa):
+  nível e estágio de cada uma.
+- Se a estação mais grave da cidade não estiver entre as dos bairros, ela aparece
+  numa linha menor.
+- A notificação continua disparada pelo estágio mais grave entre as estações, e o
+  texto passa a citar a estação.
+**Por quê:** o app é complemento; a informação oficial vem primeiro, e a da estação
+continua visível.
+**Testes:** boletim em Atenção com estação em Emergência → destaque em Atenção e a
+estação na linha menor; sem boletim → estágio calculado; dois bairros → dois
+cartões.
+**Calendário (07/11/2026):** a entrega da Etapa 2 passou para 30/11/2026. Merge do
+RF02 até 10/11, RF03 até 15/11, RF04 até 19/11, RF05 e RF06 até 20/11, APK congelado
+em 21/11, validação de 22 a 25/11, relatório até 28/11 e entrega em 29/11, com 30/11
+de reserva. A tela da estação com gráfico foi cortada.

@@ -11,13 +11,19 @@
 //   expect(a, b)     ≈ assertThat(a, b)
 // =============================================================================
 import 'package:alerta_cheia_itajai/app.dart';
+import 'package:alerta_cheia_itajai/data/catalogo/catalogo_bairros.dart';
 import 'package:alerta_cheia_itajai/data/servicos/boletim_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/nivel_rio_servico.dart';
 import 'package:alerta_cheia_itajai/domain/models/leitura_nivel.dart';
+import 'package:alerta_cheia_itajai/ui/ajustes/ajustes_view_model.dart';
 import 'package:alerta_cheia_itajai/ui/inicio/inicio_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../apoio/agendador_falso.dart';
+import '../apoio/notificador_falso.dart';
+import '../apoio/preferencias_falsas.dart';
 
 class NivelRioServicoMock extends Mock implements NivelRioServico {}
 
@@ -43,7 +49,18 @@ void main() {
     when(() => boletins.buscarBoletim()).thenAnswer((_) async => null);
     when(() => boletins.buscarTabuaMare()).thenAnswer((_) async => null);
     app = AlertaCheiaApp(
-      inicioViewModel: InicioViewModel(niveis: niveis, boletins: boletins),
+      inicioViewModel: InicioViewModel(
+        niveis: niveis,
+        boletins: boletins,
+        preferencias: PreferenciasFalsas(),
+        verificar: () async {},
+      ),
+      ajustesViewModel: AjustesViewModel(
+        preferencias: PreferenciasFalsas(),
+        notificador: NotificadorFalso(),
+        agendador: AgendadorFalso(),
+        catalogo: catalogoBairros,
+      ),
     );
   });
 
@@ -73,6 +90,25 @@ void main() {
       // ASSERT: a tela do mapa apareceu e a de início saiu.
       expect(find.byKey(const Key('tela_mapa')), findsOneWidget);
       expect(find.byKey(const Key('tela_inicio')), findsNothing);
+    });
+
+    testWidgets('a aba Ajustes abre a tela Bairros e avisos', (tester) async {
+      await tester.pumpWidget(app);
+
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Ajustes'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bairros e avisos'), findsOneWidget);
+    });
+
+    testWidgets('Escolher bairro leva à aba Ajustes', (tester) async {
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Escolher bairro'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bairros e avisos'), findsOneWidget);
     });
   });
 }

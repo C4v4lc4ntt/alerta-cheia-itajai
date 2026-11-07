@@ -7,6 +7,7 @@
 // =============================================================================
 import 'dart:async';
 
+import 'package:alerta_cheia_itajai/core/tema/cores.dart';
 import 'package:alerta_cheia_itajai/data/servicos/boletim_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/nivel_rio_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/portal_defesa_civil.dart';
@@ -18,6 +19,8 @@ import 'package:alerta_cheia_itajai/ui/inicio/inicio_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../apoio/preferencias_falsas.dart';
 
 class NivelRioServicoMock extends Mock implements NivelRioServico {}
 
@@ -62,14 +65,26 @@ void main() {
   });
 
   // Monta a tela com o ViewModel de verdade e espera carregar.
-  Future<void> abrirTela(WidgetTester tester) async {
+  // Por padrão há um bairro escolhido, então o convite não aparece.
+  Future<void> abrirTela(
+    WidgetTester tester, {
+    List<String> bairros = const ['Murta'],
+    VoidCallback? aoEscolherBairro,
+  }) async {
     final viewModel = InicioViewModel(
       niveis: niveis,
       boletins: boletins,
+      preferencias: PreferenciasFalsas(bairros: bairros),
+      verificar: () async {},
       agora: () => as2145,
     );
     await tester.pumpWidget(
-      MaterialApp(home: InicioView(viewModel: viewModel)),
+      MaterialApp(
+        home: InicioView(
+          viewModel: viewModel,
+          aoEscolherBairro: aoEscolherBairro ?? () {},
+        ),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -80,34 +95,36 @@ void main() {
     // Um Future que nunca termina: a tela fica parada em "carregando".
     when(() => niveis.buscarLeituras())
         .thenAnswer((_) => Completer<List<LeituraNivel>>().future);
-    final viewModel = InicioViewModel(niveis: niveis, boletins: boletins);
+    final viewModel = InicioViewModel(
+      niveis: niveis,
+      boletins: boletins,
+      preferencias: PreferenciasFalsas(bairros: ['Murta']),
+      verificar: () async {},
+    );
 
     await tester.pumpWidget(
-      MaterialApp(home: InicioView(viewModel: viewModel)),
+      MaterialApp(
+        home: InicioView(viewModel: viewModel, aoEscolherBairro: () {}),
+      ),
     );
     await tester.pump();
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
-  testWidgets('mostra o estágio da cidade por extenso', (tester) async {
-    await abrirTela(tester);
-
-    expect(find.text('Monitoramento'), findsOneWidget);
-  });
-
-  // D11: o título diz o que o app calcula, para não parecer uma declaração
-  // oficial da Defesa Civil (o boletim oficial vem logo abaixo).
-  testWidgets('o cartão grande diz que é o mais grave entre as estações', (
+  // D16 (revisa a D11): o cartão grande mostra a situação OFICIAL.
+  testWidgets('o cartão grande mostra a situação oficial e a hora', (
     tester,
   ) async {
     await abrirTela(tester);
 
-    expect(find.text('Estágio mais grave entre as estações'), findsOneWidget);
-    expect(find.text('ESTÁGIO EM ITAJAÍ'), findsNothing);
+    expect(find.text('Situação oficial da Defesa Civil'), findsOneWidget);
+    expect(find.text('Normalidade'), findsOneWidget);
+    expect(find.text('Boletim de 26/10 às 18:30'), findsOneWidget);
   });
 
-  testWidgets('o leitor de tela anuncia o estágio da cidade', (tester) async {
+  // A estação em Alerta não muda o que o cartão oficial diz.
+  testWidgets('o leitor de tela anuncia a situação oficial', (tester) async {
     when(() => niveis.buscarLeituras()).thenAnswer(
       (_) async => [
         ...leiturasNormais,
@@ -118,7 +135,28 @@ void main() {
     await abrirTela(tester);
 
     expect(
-      find.bySemanticsLabel('Estágio mais grave entre as estações: Alerta'),
+      find.bySemanticsLabel('Situação oficial da Defesa Civil: Normalidade'),
+      findsOneWidget,
+    );
+  });
+
+  // D16: sem boletim, o cartão volta ao estágio calculado e diz isso.
+  testWidgets('sem boletim → mostra o estágio mais grave entre as estações', (
+    tester,
+  ) async {
+    when(() => boletins.buscarBoletim()).thenAnswer((_) async => null);
+    when(() => niveis.buscarLeituras()).thenAnswer(
+      (_) async => [
+        ...leiturasNormais,
+        LeituraNivel(codigoEstacao: 'DC09', nivel: 1.42, medidoEm: as2130),
+      ],
+    );
+
+    await abrirTela(tester);
+
+    expect(find.text('Boletim oficial indisponível'), findsOneWidget);
+    expect(
+      find.text('Estágio mais grave entre as estações: Alerta'),
       findsOneWidget,
     );
   });
@@ -132,12 +170,13 @@ void main() {
     }
   });
 
+  // Sem bairro, a estação mais crítica tem o cartão dela, com o nome completo.
   testWidgets('mostra a estação mais crítica e o nível com vírgula', (
     tester,
   ) async {
-    await abrirTela(tester);
+    await abrirTela(tester, bairros: const []);
 
-    expect(find.textContaining('DC01'), findsOneWidget);
+    expect(find.text('DC01 · ICMBio/CEPSUL · Rio Itajaí-Açu'), findsOneWidget);
     expect(find.text('0,80 m'), findsOneWidget);
   });
 
@@ -244,7 +283,167 @@ void main() {
     await tester.tap(find.text('Todas as estações (2)'));
     await tester.pumpAndSettle();
 
-    expect(find.text('DC07 · Ribeirão da Murta'), findsOneWidget);
+    expect(find.text('DC07 · Portal · Ribeirão da Murta'), findsOneWidget);
     expect(find.text('0,06 m'), findsOneWidget);
+  });
+
+  // D15: a tela Início convida quem ainda não escolheu um bairro.
+  group('convite para escolher um bairro', () {
+    const convite =
+        'Escolha um bairro para receber avisos quando o estágio mudar.';
+
+    testWidgets('sem bairro escolhido → mostra o convite', (tester) async {
+      await abrirTela(tester, bairros: const []);
+
+      expect(find.text(convite), findsOneWidget);
+    });
+
+    testWidgets('com bairro escolhido → não mostra o convite', (tester) async {
+      await abrirTela(tester);
+
+      expect(find.text(convite), findsNothing);
+    });
+
+    testWidgets('tocar em Escolher bairro chama a navegação', (tester) async {
+      var toques = 0;
+      await abrirTela(
+        tester,
+        bairros: const [],
+        aoEscolherBairro: () => toques++,
+      );
+
+      await tester.tap(find.text('Escolher bairro'));
+
+      expect(toques, 1);
+    });
+  });
+
+  // D16: cor do cartão oficial e cartões dos bairros escolhidos.
+  group('destaque oficial e bairros (D16)', () {
+    // Níveis reais do portal em 07/11/2026, 07:31 (10:31 UTC).
+    final as1031 = DateTime.utc(2026, 11, 7, 10, 31);
+    final leiturasDe0711 = [
+      LeituraNivel(codigoEstacao: 'DC02', nivel: 0.97, medidoEm: as1031),
+      LeituraNivel(codigoEstacao: 'DC07', nivel: 1.53, medidoEm: as1031),
+      LeituraNivel(codigoEstacao: 'DC09', nivel: 1.42, medidoEm: as1031),
+    ];
+
+    void boletimCom(String situacao) {
+      when(() => boletins.buscarBoletim()).thenAnswer(
+        (_) async => BoletimOficial(
+          codigo: 'qualquer',
+          situacao: situacao,
+          texto: 'Texto do boletim.',
+          atualizadoEm: as1031,
+        ),
+      );
+    }
+
+    Color corDoCartaoOficial(WidgetTester tester) {
+      final caixa = tester.widget<Container>(
+        find.byKey(const Key('cartao_oficial')),
+      );
+      return (caixa.decoration! as BoxDecoration).color!;
+    }
+
+    testWidgets('boletim em Alerta → cartão na cor de Alerta', (tester) async {
+      boletimCom('Alerta');
+
+      await abrirTela(tester);
+
+      expect(corDoCartaoOficial(tester), CoresApp.estagioAlerta);
+    });
+
+    // O app não adivinha: mostra o nome que veio, na cor principal.
+    testWidgets('nome desconhecido → cor principal e o nome como veio', (
+      tester,
+    ) async {
+      boletimCom('Alerta Máximo');
+
+      await abrirTela(tester);
+
+      expect(corDoCartaoOficial(tester), CoresApp.principal);
+      expect(find.text('Alerta Máximo'), findsOneWidget);
+      expect(find.text('Monitor.'), findsNothing); // sem a barra de estágios
+    });
+
+    // O caso real de 07/11: oficial em Atenção, DC07 acima da Emergência.
+    testWidgets('Atenção oficial com estação em Emergência → destaca Atenção', (
+      tester,
+    ) async {
+      boletimCom('Atenção');
+      when(() => niveis.buscarLeituras())
+          .thenAnswer((_) async => leiturasDe0711);
+
+      await abrirTela(tester);
+
+      expect(
+        find.bySemanticsLabel('Situação oficial da Defesa Civil: Atenção'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Estação mais grave da cidade: DC07 · Portal · Ribeirão da Murta '
+          '· 1,53 m · Emergência',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('cartão do bairro com as estações próximas', (tester) async {
+      when(() => niveis.buscarLeituras())
+          .thenAnswer((_) async => leiturasDe0711);
+
+      await abrirTela(tester);
+
+      expect(
+        find.text('Murta · estações próximas (estimativa)'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('DC09 · Ponte da Rua Lidia Puel Peixer · Ribeirão da Murta'),
+        findsOneWidget,
+      );
+      expect(find.text('1,42 m · Alerta'), findsOneWidget);
+    });
+
+    // Com bairro, os cartões dos bairros ocupam o lugar da estação mais
+    // crítica, que vira a linha menor quando ficar de fora.
+    testWidgets('com bairro → sem o cartão da estação mais crítica', (
+      tester,
+    ) async {
+      await abrirTela(tester);
+
+      expect(find.text('Estação mais perto da cota'), findsNothing);
+    });
+
+    testWidgets('mais grave dentro de um bairro → sem a linha menor', (
+      tester,
+    ) async {
+      when(() => niveis.buscarLeituras())
+          .thenAnswer((_) async => leiturasDe0711);
+
+      await abrirTela(tester, bairros: const ['Portal I e II']);
+
+      expect(find.textContaining('Estação mais grave da cidade'), findsNothing);
+    });
+
+    testWidgets('dois bairros → dois cartões', (tester) async {
+      await abrirTela(tester, bairros: const ['Murta', 'Centro']);
+
+      expect(find.textContaining('· estações próximas'), findsNWidgets(2));
+    });
+
+    // Murta usa DC02 e DC09, que não têm leitura no cenário padrão.
+    testWidgets('bairro sem leitura nas estações próximas → avisa', (
+      tester,
+    ) async {
+      await abrirTela(tester);
+
+      expect(
+        find.text('Sem leitura das estações próximas agora.'),
+        findsOneWidget,
+      );
+    });
   });
 }

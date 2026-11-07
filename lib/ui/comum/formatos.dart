@@ -9,14 +9,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/tema/cores.dart';
 import '../../domain/models/estagio_alerta.dart';
+import '../../domain/regras/nome_do_estagio.dart';
 
-/// Nome oficial do [estagio], por extenso e com acento (D01).
-String nomeDoEstagio(EstagioAlerta estagio) => switch (estagio) {
-  EstagioAlerta.monitoramento => 'Monitoramento',
-  EstagioAlerta.atencao => 'Atenção',
-  EstagioAlerta.alerta => 'Alerta',
-  EstagioAlerta.emergencia => 'Emergência',
-};
+export '../../domain/regras/nome_da_estacao.dart' show nomeDaEstacao;
+export '../../domain/regras/nome_do_estagio.dart' show nomeDoEstagio;
 
 /// Rótulo da barra de estágios: só o Monitoramento é abreviado (D05).
 String rotuloCurtoDoEstagio(EstagioAlerta estagio) =>
@@ -41,7 +37,19 @@ String formatarNivel(double nivel) =>
 /// Usa UTC−3 fixo (o Brasil não tem horário de verão desde 2019), para dar
 /// o mesmo resultado no celular, no seu PC e no CI.
 String horaDeBrasilia(DateTime instante) {
-  final emBrasilia = instante.toUtc().subtract(const Duration(hours: 3));
-  String doisDigitos(int numero) => numero.toString().padLeft(2, '0');
-  return '${doisDigitos(emBrasilia.hour)}:${doisDigitos(emBrasilia.minute)}';
+  final emBrasilia = _emBrasilia(instante);
+  return '${_doisDigitos(emBrasilia.hour)}:${_doisDigitos(emBrasilia.minute)}';
 }
+
+/// Data e hora em Brasília: "07/11 às 07:57" (D16).
+String dataEHoraDeBrasilia(DateTime instante) {
+  final emBrasilia = _emBrasilia(instante);
+  return '${_doisDigitos(emBrasilia.day)}/${_doisDigitos(emBrasilia.month)} '
+      'às ${horaDeBrasilia(instante)}';
+}
+
+// O instante convertido para o horário de Brasília (UTC−3 fixo).
+DateTime _emBrasilia(DateTime instante) =>
+    instante.toUtc().subtract(const Duration(hours: 3));
+
+String _doisDigitos(int numero) => numero.toString().padLeft(2, '0');
