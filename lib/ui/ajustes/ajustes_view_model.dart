@@ -11,6 +11,7 @@ import '../../data/servicos/agendador_verificacao.dart';
 import '../../data/servicos/notificador_servico.dart';
 import '../../data/servicos/preferencias_servico.dart';
 import '../../domain/models/bairro.dart';
+import '../../domain/regras/sem_acentos.dart';
 
 /// Estado da escolha de bairros.
 class AjustesViewModel extends ChangeNotifier {
@@ -21,7 +22,7 @@ class AjustesViewModel extends ChangeNotifier {
     required this.agendador,
     required List<Bairro> catalogo,
   }) : _catalogoOrdenado = [...catalogo]
-         ..sort((a, b) => _semAcentos(a.nome).compareTo(_semAcentos(b.nome)));
+         ..sort((a, b) => semAcentos(a.nome).compareTo(semAcentos(b.nome)));
 
   /// Onde os bairros escolhidos ficam guardados.
   final PreferenciasServico preferencias;
@@ -40,7 +41,7 @@ class AjustesViewModel extends ChangeNotifier {
   /// Bairros que combinam com a busca, em ordem alfabética.
   List<Bairro> get bairrosVisiveis => [
     for (final bairro in _catalogoOrdenado)
-      if (_semAcentos(bairro.nome).contains(_busca)) bairro,
+      if (semAcentos(bairro.nome).contains(_busca)) bairro,
   ];
 
   /// Diz se o bairro de nome [nome] está marcado.
@@ -66,7 +67,7 @@ class AjustesViewModel extends ChangeNotifier {
 
   /// Filtra a lista pelo [texto] digitado.
   void buscar(String texto) {
-    _busca = _semAcentos(texto.trim());
+    _busca = semAcentos(texto.trim());
     notifyListeners();
   }
 
@@ -99,18 +100,5 @@ class AjustesViewModel extends ChangeNotifier {
     if (negada == _permissaoNegada) return;
     _permissaoNegada = negada;
     notifyListeners();
-  }
-
-  // Letras acentuadas do português e a versão sem acento, na mesma posição.
-  static const _comAcento = 'áàâãéêíóôõúüç';
-  static const _semAcento = 'aaaaeeiooouuc';
-
-  // Texto em minúsculas e sem acentos, para comparar e buscar.
-  static String _semAcentos(String texto) {
-    var resultado = texto.toLowerCase();
-    for (var i = 0; i < _comAcento.length; i++) {
-      resultado = resultado.replaceAll(_comAcento[i], _semAcento[i]);
-    }
-    return resultado;
   }
 }
