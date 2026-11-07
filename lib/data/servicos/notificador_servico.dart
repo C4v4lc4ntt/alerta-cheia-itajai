@@ -4,6 +4,7 @@
 // ETAPA VERDE: código mínimo para os testes passarem.
 // A implementação real usará o pacote flutter_local_notifications (D14).
 // =============================================================================
+import '../../domain/models/estacao.dart';
 import '../../domain/models/estagio_alerta.dart';
 
 /// Mostra as notificações locais do app.
@@ -12,9 +13,11 @@ abstract interface class NotificadorServico {
   /// Se o morador já respondeu, o sistema responde sem mostrar nada.
   Future<bool> pedirPermissao();
 
-  /// Avisa que o estágio do [bairro] mudou de [anterior] para [atual].
+  /// Avisa que o estágio do [bairro] mudou de [anterior] para [atual],
+  /// citando a [estacao] mais crítica (D16).
   Future<void> notificarMudanca({
     required String bairro,
+    required Estacao estacao,
     required EstagioAlerta anterior,
     required EstagioAlerta atual,
   });

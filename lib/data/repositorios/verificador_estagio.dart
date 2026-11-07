@@ -4,10 +4,9 @@
 //
 // ETAPA VERDE: código mínimo para os testes passarem.
 // =============================================================================
-import '../../domain/models/estagio_alerta.dart';
 import '../../domain/regras/avaliar_leituras.dart';
 import '../../domain/regras/deve_notificar.dart';
-import '../../domain/regras/estagio_mais_grave.dart';
+import '../../domain/regras/mais_critica_primeiro.dart';
 import '../catalogo/catalogo_estacoes.dart';
 import '../servicos/nivel_rio_servico.dart';
 import '../servicos/notificador_servico.dart';
@@ -40,14 +39,16 @@ class VerificadorEstagio {
       final bairros = await preferencias.lerBairrosEscolhidos();
       if (bairros.isEmpty) return; // D15: sem bairro, nem consulta o portal.
 
-      final atual = await _buscarEstagioAtual();
-      if (atual == null) return; // Sem leitura, nunca assume Monitoramento.
+      final critica = await _buscarMaisCritica();
+      if (critica == null) return; // Sem leitura, nunca assume Monitoramento.
+      final atual = critica.estagio; // O mais grave entre as estações (D02).
 
       final anterior = await preferencias.lerUltimoEstagio();
       if (deveNotificar(anterior: anterior, atual: atual)) {
         for (final bairro in bairros) {
           await notificador.notificarMudanca(
             bairro: bairro,
+            estacao: critica.estacao,
             anterior: anterior!,
             atual: atual,
           );
@@ -61,12 +62,12 @@ class VerificadorEstagio {
     }
   }
 
-  // Estágio mais grave entre as estações do catálogo (D02); null se nenhuma
+  // Estação mais crítica, a mesma da tela Início (D16); null se nenhuma
   // leitura for reconhecida.
-  Future<EstagioAlerta?> _buscarEstagioAtual() async {
+  Future<SituacaoEstacao?> _buscarMaisCritica() async {
     final leituras = await niveis.buscarLeituras();
     final avaliadas = avaliarLeituras(leituras, catalogoEstacoes);
     if (avaliadas.isEmpty) return null;
-    return estagioMaisGrave([for (final item in avaliadas) item.estagio]);
+    return ([...avaliadas]..sort(maisCriticaPrimeiro)).first;
   }
 }

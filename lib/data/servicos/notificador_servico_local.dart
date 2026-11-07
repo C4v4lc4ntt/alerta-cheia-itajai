@@ -6,6 +6,7 @@
 // =============================================================================
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../domain/models/estacao.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/regras/texto_notificacao.dart';
 import 'notificador_servico.dart';
@@ -52,11 +53,13 @@ class NotificadorServicoLocal implements NotificadorServico {
   @override
   Future<void> notificarMudanca({
     required String bairro,
+    required Estacao estacao,
     required EstagioAlerta anterior,
     required EstagioAlerta atual,
   }) {
     final texto = textoDaNotificacao(
       bairro: bairro,
+      estacao: estacao,
       anterior: anterior,
       atual: atual,
     );
