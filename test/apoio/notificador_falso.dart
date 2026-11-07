@@ -5,11 +5,13 @@
 // teste conferir.
 // =============================================================================
 import 'package:alerta_cheia_itajai/data/servicos/notificador_servico.dart';
+import 'package:alerta_cheia_itajai/domain/models/estacao.dart';
 import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
 
 /// Uma notificação pedida ao notificador.
 typedef NotificacaoPedida = ({
   String bairro,
+  String estacao,
   EstagioAlerta anterior,
   EstagioAlerta atual,
 });
@@ -37,10 +39,16 @@ class NotificadorFalso implements NotificadorServico {
   @override
   Future<void> notificarMudanca({
     required String bairro,
+    required Estacao estacao,
     required EstagioAlerta anterior,
     required EstagioAlerta atual,
   }) async {
     if (deveFalhar) throw StateError('Falha simulada na notificação.');
-    pedidas.add((bairro: bairro, anterior: anterior, atual: atual));
+    pedidas.add((
+      bairro: bairro,
+      estacao: estacao.codigo,
+      anterior: anterior,
+      atual: atual,
+    ));
   }
 }

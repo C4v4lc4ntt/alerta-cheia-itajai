@@ -6,6 +6,7 @@
 // uma borda do app; se a notificação aparece no celular é conferido no passo
 // 49.
 // =============================================================================
+import 'package:alerta_cheia_itajai/data/catalogo/catalogo_estacoes.dart';
 import 'package:alerta_cheia_itajai/data/servicos/notificador_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/notificador_servico_local.dart';
 import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
@@ -49,6 +50,7 @@ void main() {
     final NotificadorServico servico = notificador;
     return servico.notificarMudanca(
       bairro: bairro,
+      estacao: catalogoEstacoes.firstWhere((item) => item.codigo == 'DC07'),
       anterior: EstagioAlerta.monitoramento,
       atual: EstagioAlerta.atencao,
     );
@@ -88,9 +90,10 @@ void main() {
         ),
       ).captured;
       expect(capturados, [
-        'Murta: estágio mudou para Atenção',
-        'De Monitoramento para Atenção, pelo estágio mais grave entre as '
-            'estações. Não é alerta oficial. Emergência: 199, 193 ou 192.',
+        'Murta: estação DC07 (Portal) em Atenção',
+        'DC07 · Portal · Ribeirão da Murta. O estágio mais grave entre as '
+            'estações passou de Monitoramento para Atenção. Não é alerta '
+            'oficial; confira a Defesa Civil. Emergência: 199, 193 ou 192.',
       ]);
     });
 

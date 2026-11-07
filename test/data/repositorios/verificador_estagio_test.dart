@@ -63,6 +63,7 @@ void main() {
       expect(notificador.pedidas, [
         (
           bairro: 'Murta',
+          estacao: 'DC01',
           anterior: EstagioAlerta.monitoramento,
           atual: EstagioAlerta.atencao,
         ),
@@ -79,6 +80,7 @@ void main() {
       expect(notificador.pedidas, [
         (
           bairro: 'Murta',
+          estacao: 'DC01',
           anterior: EstagioAlerta.alerta,
           atual: EstagioAlerta.atencao,
         ),
@@ -142,6 +144,25 @@ void main() {
       await verificador.verificar();
 
       expect(notificador.pedidas.single.atual, EstagioAlerta.alerta);
+    });
+
+    // D16: o aviso cita a estação mais crítica, a mesma da tela Início.
+    // Níveis reais do portal em 07/11/2026, 07:31: DC07 acima da cota de
+    // Emergência (1,50 m) e DC09 em Alerta.
+    test('cita a estação mais crítica', () async {
+      preferencias.ultimoEstagio = EstagioAlerta.monitoramento;
+      when(() => niveis.buscarLeituras()).thenAnswer(
+        (_) async => [
+          leitura('DC09', 1.42),
+          leitura('DC07', 1.53),
+          leitura('DC02', 0.97),
+        ],
+      );
+
+      await verificador.verificar();
+
+      expect(notificador.pedidas.single.estacao, 'DC07');
+      expect(notificador.pedidas.single.atual, EstagioAlerta.emergencia);
     });
 
     // D14: a falha não muda nada e não derruba a tarefa em segundo plano.
