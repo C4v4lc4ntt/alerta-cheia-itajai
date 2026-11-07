@@ -298,4 +298,112 @@ void main() {
       demorada.complete();
     });
   });
+
+  // D16: um cartão por bairro escolhido, com as estações próximas (estimativa).
+  group('cartões dos bairros', () {
+    // Níveis reais do portal em 07/11/2026, 07:31 (10:31 UTC).
+    final as1031 = DateTime.utc(2026, 11, 7, 10, 31);
+    final leiturasDe0711 = [
+      LeituraNivel(codigoEstacao: 'DC02', nivel: 0.97, medidoEm: as1031),
+      LeituraNivel(codigoEstacao: 'DC07', nivel: 1.53, medidoEm: as1031),
+      LeituraNivel(codigoEstacao: 'DC09', nivel: 1.42, medidoEm: as1031),
+    ];
+
+    Future<InicioPronto> carregarCom(List<String> bairros) async {
+      when(() => niveis.buscarLeituras())
+          .thenAnswer((_) async => leiturasDe0711);
+      viewModel = InicioViewModel(
+        niveis: niveis,
+        boletins: boletins,
+        preferencias: PreferenciasFalsas(bairros: bairros),
+        verificar: () async {},
+      );
+      await viewModel.carregar();
+      return viewModel.estado as InicioPronto;
+    }
+
+    List<String> codigos(CartaoBairro cartao) => [
+      for (final item in cartao.estacoes) item.estacao.codigo,
+    ];
+
+    test('sem bairro → nenhum cartão', () async {
+      final pronto = await carregarCom(const []);
+
+      expect(pronto.bairros, isEmpty);
+    });
+
+    // Murta: DC02 e DC09, na ordem do catálogo (da mais próxima).
+    test('Murta → cartão com DC02 e DC09', () async {
+      final pronto = await carregarCom(['Murta']);
+
+      expect(pronto.bairros.single.nome, 'Murta');
+      expect(codigos(pronto.bairros.single), ['DC02', 'DC09']);
+    });
+
+    test('cada estação do cartão traz o próprio estágio', () async {
+      final pronto = await carregarCom(['Murta']);
+
+      final estagios = [
+        for (final item in pronto.bairros.single.estacoes) item.estagio,
+      ];
+      expect(estagios, [EstagioAlerta.monitoramento, EstagioAlerta.alerta]);
+    });
+
+    test('dois bairros → dois cartões, na ordem escolhida', () async {
+      final pronto = await carregarCom(['Murta', 'Centro']);
+
+      expect([for (final c in pronto.bairros) c.nome], ['Murta', 'Centro']);
+    });
+
+    // Centro usa DC01 e DC06, que não têm leitura neste cenário.
+    test('estação sem leitura fica fora do cartão', () async {
+      final pronto = await carregarCom(['Centro']);
+
+      expect(codigos(pronto.bairros.single), isEmpty);
+    });
+
+    // Um nome salvo que saiu do catálogo não pode derrubar a tela.
+    test('bairro fora do catálogo é ignorado', () async {
+      final pronto = await carregarCom(['Bairro Antigo', 'Murta']);
+
+      expect([for (final c in pronto.bairros) c.nome], ['Murta']);
+    });
+
+    // A DC07 (Emergência) não é das estações estimadas para a Murta.
+    test('estação mais grave fora dos bairros → mostrar a linha', () async {
+      final pronto = await carregarCom(['Murta']);
+
+      expect(pronto.estacaoMaisCritica.codigo, 'DC07');
+      expect(pronto.maisCriticaForaDosBairros, isTrue);
+    });
+
+    // Portal I e II usa a DC07 em primeiro lugar.
+    test('estação mais grave dentro de um bairro → sem linha', () async {
+      final pronto = await carregarCom(['Murta', 'Portal I e II']);
+
+      expect(pronto.maisCriticaForaDosBairros, isFalse);
+    });
+
+    // Sem bairro, a tela já mostra a estação mais crítica no cartão dela.
+    test('sem bairro → sem linha', () async {
+      final pronto = await carregarCom(const []);
+
+      expect(pronto.maisCriticaForaDosBairros, isFalse);
+    });
+
+    test('falha ao ler os bairros → nenhum cartão', () async {
+      when(() => niveis.buscarLeituras())
+          .thenAnswer((_) async => leiturasDe0711);
+      viewModel = InicioViewModel(
+        niveis: niveis,
+        boletins: boletins,
+        preferencias: _PreferenciasQueFalham(),
+        verificar: () async {},
+      );
+
+      await viewModel.carregar();
+
+      expect((viewModel.estado as InicioPronto).bairros, isEmpty);
+    });
+  });
 }
