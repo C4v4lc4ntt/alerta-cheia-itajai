@@ -19,6 +19,7 @@ import '../../domain/models/leitura_nivel.dart';
 import '../../domain/models/tabua_mare.dart';
 import '../../domain/regras/avaliar_leituras.dart';
 import '../../domain/regras/estagio_mais_grave.dart';
+import '../../domain/regras/mais_critica_primeiro.dart';
 
 /// Bairro escolhido com as estações próximas que têm leitura (D08, D16).
 typedef CartaoBairro = ({String nome, List<SituacaoEstacao> estacoes});
@@ -140,7 +141,7 @@ class InicioViewModel extends ChangeNotifier {
       if (avaliadas.isEmpty) {
         _estado = InicioErro(_mensagemErro);
       } else {
-        final ordenadas = [...avaliadas]..sort(_maisCriticaPrimeiro);
+        final ordenadas = [...avaliadas]..sort(maisCriticaPrimeiro);
         final critica = ordenadas.first;
         // Complemento: se a leitura falhar, a tela segue sem convite e sem
         // cartões de bairro.
@@ -179,18 +180,6 @@ class InicioViewModel extends ChangeNotifier {
   static const _mensagemErro =
       'Não foi possível obter os níveis da Defesa Civil. '
       'Tente de novo em instantes.';
-
-  // Mais crítica primeiro: maior estágio e, no empate, a mais perto da cota
-  // de Atenção (em proporção).
-  static int _maisCriticaPrimeiro(SituacaoEstacao a, SituacaoEstacao b) {
-    final porEstagio = b.estagio.index.compareTo(a.estagio.index);
-    if (porEstagio != 0) return porEstagio;
-    return _proporcaoDaCota(b).compareTo(_proporcaoDaCota(a));
-  }
-
-  // Quanto da cota de Atenção o nível já alcançou (1,0 = na cota).
-  static double _proporcaoDaCota(SituacaoEstacao situacao) =>
-      situacao.leitura.nivel / situacao.estacao.cotas.atencao;
 
   // Um cartão por nome escolhido que existe no catálogo, com as estações na
   // ordem do catálogo (da mais próxima). Estação sem leitura fica de fora.

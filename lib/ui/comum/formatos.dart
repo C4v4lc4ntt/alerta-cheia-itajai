@@ -8,10 +8,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/tema/cores.dart';
-import '../../domain/models/estacao.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/regras/nome_do_estagio.dart';
 
+export '../../domain/regras/nome_da_estacao.dart' show nomeDaEstacao;
 export '../../domain/regras/nome_do_estagio.dart' show nomeDoEstagio;
 
 /// Rótulo da barra de estágios: só o Monitoramento é abreviado (D05).
@@ -47,10 +47,6 @@ String dataEHoraDeBrasilia(DateTime instante) {
   return '${_doisDigitos(emBrasilia.day)}/${_doisDigitos(emBrasilia.month)} '
       'às ${horaDeBrasilia(instante)}';
 }
-
-/// Código, nome e rio: "DC07 · Portal · Ribeirão da Murta" (D16).
-String nomeDaEstacao(Estacao estacao) =>
-    '${estacao.codigo} · ${estacao.nome} · ${estacao.rio}';
 
 // O instante convertido para o horário de Brasília (UTC−3 fixo).
 DateTime _emBrasilia(DateTime instante) =>
