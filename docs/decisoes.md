@@ -200,3 +200,30 @@ salvo. Sem bairro não há verificação, então esse estágio ficaria velho e g
 aviso falso de mudança quando o morador voltasse a escolher um bairro. A primeira
 leitura depois disso só salva, como na D12. Teste: desmarcar o último bairro apaga
 o estágio; com outro bairro ainda marcado, ele continua salvo.
+
+## D16 · Destaque oficial e cartões do bairro na tela Início (07/11/2026)
+**Contexto:** em 07/11/2026, às 07:31, o boletim da Defesa Civil estava em
+"Atenção" e a DC07 (Ribeirão da Murta) marcava 1,53 m, acima da cota de Emergência
+(1,50 m). O cartão grande mostraria "Emergência", o que podia ser lido como alerta
+oficial. Além disso, o bairro escolhido não aparecia na tela Início.
+**Decisão:** revisa a D11 e a D08.
+- O cartão grande mostra a situação oficial da Defesa Civil, com a hora do boletim.
+  Sem boletim, mostra "Boletim oficial indisponível" e o estágio mais grave entre as
+  estações, como antes.
+- A cor do cartão segue o estágio de mesmo nome ("Normalidade" usa a cor de
+  Monitoramento). Código desconhecido: cor principal do app e o nome que veio.
+- Abaixo, um cartão por bairro escolhido, com as estações próximas (estimativa):
+  nível e estágio de cada uma.
+- Se a estação mais grave da cidade não estiver entre as dos bairros, ela aparece
+  numa linha menor.
+- A notificação continua disparada pelo estágio mais grave entre as estações, e o
+  texto passa a citar a estação.
+**Por quê:** o app é complemento; a informação oficial vem primeiro, e a da estação
+continua visível.
+**Testes:** boletim em Atenção com estação em Emergência → destaque em Atenção e a
+estação na linha menor; sem boletim → estágio calculado; dois bairros → dois
+cartões.
+**Calendário (07/11/2026):** a entrega da Etapa 2 passou para 30/11/2026. Merge do
+RF02 até 10/11, RF03 até 15/11, RF04 até 19/11, RF05 e RF06 até 20/11, APK congelado
+em 21/11, validação de 22 a 25/11, relatório até 28/11 e entrega em 29/11, com 30/11
+de reserva. A tela da estação com gráfico foi cortada.
