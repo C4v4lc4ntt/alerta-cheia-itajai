@@ -7,6 +7,7 @@
 // =============================================================================
 import 'package:flutter/foundation.dart';
 
+import '../../data/catalogo/catalogo_bairros.dart';
 import '../../data/catalogo/catalogo_estacoes.dart';
 import '../../data/servicos/boletim_servico.dart';
 import '../../data/servicos/nivel_rio_servico.dart';
@@ -18,6 +19,9 @@ import '../../domain/models/leitura_nivel.dart';
 import '../../domain/models/tabua_mare.dart';
 import '../../domain/regras/avaliar_leituras.dart';
 import '../../domain/regras/estagio_mais_grave.dart';
+
+/// Bairro escolhido com as estações próximas que têm leitura (D08, D16).
+typedef CartaoBairro = ({String nome, List<SituacaoEstacao> estacoes});
 
 /// O que a tela Início está mostrando.
 sealed class EstadoInicio {}
@@ -46,6 +50,8 @@ final class InicioPronto extends EstadoInicio {
     required this.leituraMaisCritica,
     required this.estacoes,
     required this.semBairroEscolhido,
+    required this.bairros,
+    required this.maisCriticaForaDosBairros,
     this.boletim,
     this.tabuaMare,
   });
@@ -73,6 +79,13 @@ final class InicioPronto extends EstadoInicio {
 
   /// Se a tela deve convidar o morador a escolher um bairro (D15).
   final bool semBairroEscolhido;
+
+  /// Um cartão por bairro escolhido, na ordem da escolha (D16).
+  final List<CartaoBairro> bairros;
+
+  /// Se a [estacaoMaisCritica] ficou fora de todos os cartões de bairro, e a
+  /// tela precisa mostrá-la numa linha menor (D16).
+  final bool maisCriticaForaDosBairros;
 
   /// Boletim oficial; null se não houver ou se o portal falhar (D10).
   final BoletimOficial? boletim;
@@ -129,6 +142,10 @@ class InicioViewModel extends ChangeNotifier {
       } else {
         final ordenadas = [...avaliadas]..sort(_maisCriticaPrimeiro);
         final critica = ordenadas.first;
+        // Complemento: se a leitura falhar, a tela segue sem convite e sem
+        // cartões de bairro.
+        final escolhidos = await _semFalhar(preferencias.lerBairrosEscolhidos);
+        final cartoes = _cartoesDosBairros(escolhidos ?? const [], avaliadas);
         _estado = InicioPronto(
           estagioCidade: estagioMaisGrave([
             for (final avaliada in avaliadas) avaliada.estagio,
@@ -141,7 +158,11 @@ class InicioViewModel extends ChangeNotifier {
           estacaoMaisCritica: critica.estacao,
           leituraMaisCritica: critica.leitura,
           estacoes: ordenadas,
-          semBairroEscolhido: await _semBairroEscolhido(),
+          semBairroEscolhido: escolhidos?.isEmpty ?? false,
+          bairros: cartoes,
+          maisCriticaForaDosBairros:
+              cartoes.isNotEmpty &&
+              !cartoes.any((cartao) => _contem(cartao, critica.estacao.codigo)),
           boletim: await _semFalhar(boletins.buscarBoletim),
           tabuaMare: await _semFalhar(boletins.buscarTabuaMare),
         );
@@ -171,11 +192,30 @@ class InicioViewModel extends ChangeNotifier {
   static double _proporcaoDaCota(SituacaoEstacao situacao) =>
       situacao.leitura.nivel / situacao.estacao.cotas.atencao;
 
-  // O convite é complemento: se a leitura falhar, a tela segue sem ele.
-  Future<bool> _semBairroEscolhido() async {
-    final bairros = await _semFalhar(preferencias.lerBairrosEscolhidos);
-    return bairros?.isEmpty ?? false;
+  // Um cartão por nome escolhido que existe no catálogo, com as estações na
+  // ordem do catálogo (da mais próxima). Estação sem leitura fica de fora.
+  static List<CartaoBairro> _cartoesDosBairros(
+    List<String> nomes,
+    List<SituacaoEstacao> avaliadas,
+  ) {
+    final porCodigo = {for (final item in avaliadas) item.estacao.codigo: item};
+    return [
+      for (final nome in nomes)
+        for (final bairro in catalogoBairros)
+          if (bairro.nome == nome)
+            (
+              nome: nome,
+              estacoes: [
+                // "?" só põe na lista quando a estação tem leitura.
+                for (final codigo in bairro.estacoesProximas)
+                  ?porCodigo[codigo],
+              ],
+            ),
+    ];
   }
+
+  static bool _contem(CartaoBairro cartao, String codigo) =>
+      cartao.estacoes.any((item) => item.estacao.codigo == codigo);
 
   // Boletim e tábua são complemento: se falharem, a tela segue sem eles.
   Future<T?> _semFalhar<T>(Future<T?> Function() buscar) async {
