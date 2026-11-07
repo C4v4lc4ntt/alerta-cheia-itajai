@@ -61,6 +61,18 @@ jobs:
       - name: Verificar formatação
         run: dart format --output=none --set-exit-if-changed .
 
+      # 5b) Recria os arquivos do Firebase, que ficam fora do Git (.gitignore), a partir
+      # dos GitHub Secrets (texto em base64). Se um Secret faltar, para com erro claro.
+      - name: Recriar a configuração do Firebase
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: |
+          test -n "$GOOGLE_SERVICES_JSON" || { echo "::error::Secret GOOGLE_SERVICES_JSON não configurado"; exit 1; }
+          test -n "$FIREBASE_OPTIONS_DART" || { echo "::error::Secret FIREBASE_OPTIONS_DART não configurado"; exit 1; }
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
+
       # 6) Análise estática (lint): pega erros e más práticas sem executar o app.
       - name: Análise estática
         run: flutter analyze
@@ -106,6 +118,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+      # Recria os arquivos do Firebase, que ficam fora do Git (.gitignore), a partir
+      # dos GitHub Secrets (texto em base64). Se um Secret faltar, para com erro claro.
+      - name: Recriar a configuração do Firebase
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: |
+          test -n "$GOOGLE_SERVICES_JSON" || { echo "::error::Secret GOOGLE_SERVICES_JSON não configurado"; exit 1; }
+          test -n "$FIREBASE_OPTIONS_DART" || { echo "::error::Secret FIREBASE_OPTIONS_DART não configurado"; exit 1; }
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
       - uses: actions/setup-java@v6       # o build Android precisa do Java
         with:
           distribution: temurin
@@ -132,6 +155,17 @@ jobs:
     runs-on: macos-26   # versão fixa, a mesma em que o CI passou em 19/10/2026
     steps:
       - uses: actions/checkout@v7
+      # Recria os arquivos do Firebase, que ficam fora do Git (.gitignore), a partir
+      # dos GitHub Secrets (texto em base64). Se um Secret faltar, para com erro claro.
+      - name: Recriar a configuração do Firebase
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: |
+          test -n "$GOOGLE_SERVICES_JSON" || { echo "::error::Secret GOOGLE_SERVICES_JSON não configurado"; exit 1; }
+          test -n "$FIREBASE_OPTIONS_DART" || { echo "::error::Secret FIREBASE_OPTIONS_DART não configurado"; exit 1; }
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
