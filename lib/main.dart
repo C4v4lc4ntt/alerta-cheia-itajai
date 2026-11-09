@@ -9,6 +9,7 @@
 // =============================================================================
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -22,8 +23,10 @@ import 'data/repositorios/verificador_estagio.dart';
 import 'data/servicos/agendador_verificacao_local.dart';
 import 'data/servicos/boletim_servico_defesa_civil.dart';
 import 'data/servicos/criar_servico_de_nivel.dart';
+import 'data/servicos/iniciar_firebase.dart';
 import 'data/servicos/notificador_servico_local.dart';
 import 'data/servicos/preferencias_servico_local.dart';
+import 'firebase_options.dart';
 import 'tarefa_verificacao.dart';
 import 'ui/ajustes/ajustes_view_model.dart';
 import 'ui/inicio/inicio_view_model.dart';
@@ -31,6 +34,13 @@ import 'ui/inicio/inicio_view_model.dart';
 Future<void> main() async {
   // Necessário porque o plugin de notificações é usado antes do runApp.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // RF03/D17: liga o Firebase. Se falhar, o app abre do mesmo jeito; o
+  // resultado será usado pela tela de marcar (ciclo 19).
+  await iniciarFirebase(
+    () =>
+        Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+  );
 
   final notificador = NotificadorServicoLocal(
     plugin: FlutterLocalNotificationsPlugin(),
