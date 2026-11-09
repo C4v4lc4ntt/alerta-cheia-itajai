@@ -227,3 +227,37 @@ cartões.
 RF02 até 10/11, RF03 até 15/11, RF04 até 19/11, RF05 e RF06 até 20/11, APK congelado
 em 21/11, validação de 22 a 25/11, relatório até 28/11 e entrega em 29/11, com 30/11
 de reserva. A tela da estação com gráfico foi cortada.
+
+## D17 · Registro de ponto de alagamento sem login (09/11/2026)
+**Contexto:** o RF03 grava os pontos no Cloud Firestore. O app não tem login (LGPD,
+CLAUDE.md seção 7) e a configuração do Firebase vai dentro do APK, então as regras do
+Firestore são a única validação do lado do servidor. A D13 previa o `geolocator` só no RF04.
+**Decisão:**
+- **Campos do ponto:** `latitude`, `longitude`, `altura` (canela, joelho ou cintura) e
+  `criadoEm`. Sem foto (D06), sem texto livre e sem nenhum identificador do celular
+  ou do morador, para que dois pontos não possam ser ligados à mesma pessoa.
+- **Localização:** GPS uma vez, ao abrir a tela de marcar, com a precisão mostrada na tela.
+  Sem permissão ou com falha no GPS, o envio fica bloqueado e a tela explica como ativar.
+  A posição só é gravada como parte do ponto enviado. O `geolocator` entra agora, e a D13
+  continua valendo para o mapa.
+- **Área:** retângulo do município de Itajaí no OpenStreetMap (relation 296666, consulta de
+  09/11/2026): latitude de −27,0960000 a −26,8378087 e longitude de −48,8690000 a
+  −48,6213454, com a borda contando como dentro. Conferido no domínio e nas regras.
+- **Regras do Firestore:** leitura liberada (o mapa é público); criação só com os 4 campos,
+  altura válida, posição dentro da área e `criadoEm` igual ao horário do servidor
+  (`request.time`); alterar e apagar bloqueados (o RF04 abre só o contador do "Já baixou").
+  O `firestore.rules` fica no repositório.
+- **Pacotes:** `cloud_firestore` 7.1.0 (gravar e ler os pontos) e `geolocator` 14.1.2
+  (posição), e `fake_cloud_firestore` 4.5.0 só em `dev_dependencies`, para testar a
+  gravação sem rede. Versões exatas, sem `^`.
+- **Entrada:** botão "Marcar rua alagada" na aba Mapa.
+
+**Por quê:** é a proteção possível sem login e sem custo, e cabe no prazo do RF03 (15/11).
+O horário do servidor impede datas falsas que driblariam a expiração de 6 h do RF04.
+**Limitações:** não há limite de envios por pessoa; o retângulo inclui partes de Navegantes,
+de Balneário Camboriú e do mar. O App Check fica como trabalho futuro (exige conta da Apple
+no iOS).
+**Testes (RF03):** registro sem localização ou sem altura é rejeitado; registro válido guarda
+a data e a hora; em cada lado da área, um ponto 0,0000001° para dentro e um na borda são
+aceitos, e um 0,0000001° para fora é rejeitado; as regras recusam campo a mais, altura
+inventada, ponto fora da área e data diferente da do servidor.
