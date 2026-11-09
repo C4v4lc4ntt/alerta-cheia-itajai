@@ -89,7 +89,8 @@ jobs:
           path: coverage/lcov.info
 
       # 9) Exige no mínimo 80% de cobertura na LÓGICA (lib/domain e lib/data).
-      #    Telas, tema e main ficam fora da conta (são cobertos por testes de widget).
+      #    Telas, tema, main e o firebase_options.dart (gerado pelo FlutterFire)
+      #    ficam fora da conta (as telas são cobertas por testes de widget).
       #    A conta é feita aqui mesmo, a partir do coverage/lcov.info, sem action de
       #    terceiros (a very_good_coverage foi arquivada em 31/03/2026).
       #    No lcov.info: "SF:" = arquivo, "LF:" = linhas, "LH:" = linhas testadas.
@@ -97,7 +98,7 @@ jobs:
         run: |
           awk -v minimo=80 '
             /^SF:/ { arquivo = substr($0, 4)
-                     ignorar = (arquivo ~ /^lib\/(main|app)\.dart$/ || arquivo ~ /^lib\/(core|ui)\//) }
+                     ignorar = (arquivo ~ /^lib\/(main|app|firebase_options)\.dart$/ || arquivo ~ /^lib\/(core|ui)\//) }
             /^LF:/ && !ignorar { total += substr($0, 4) }
             /^LH:/ && !ignorar { cobertas += substr($0, 4) }
             END {
