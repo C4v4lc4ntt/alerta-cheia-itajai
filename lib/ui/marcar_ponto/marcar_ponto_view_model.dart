@@ -34,6 +34,10 @@ class MarcarPontoViewModel extends ChangeNotifier {
   /// Relógio injetado, para os testes não dependerem da hora real.
   final DateTime Function() agora;
 
+  /// Quanto o envio pode demorar antes de virar erro na tela (decisão de
+  /// 10/11). A gravação pode seguir na fila do Firestore e chegar depois.
+  static const tempoLimiteEnvio = Duration(seconds: 15);
+
   LeituraLocalizacao? _leitura;
   AlturaAgua? _altura;
   EstadoEnvio _envio = EstadoEnvio.nenhum;
@@ -95,19 +99,22 @@ class MarcarPontoViewModel extends ChangeNotifier {
     _envio = EstadoEnvio.enviando;
     notifyListeners();
     try {
-      await pontos.enviar(
-        PontoAlagamento.registrar(
-          latitude: posicao.latitude,
-          longitude: posicao.longitude,
-          altura: _altura,
-          area: areaItajai,
-          agora: agora,
-        ),
-      );
+      await pontos
+          .enviar(
+            PontoAlagamento.registrar(
+              latitude: posicao.latitude,
+              longitude: posicao.longitude,
+              altura: _altura,
+              area: areaItajai,
+              agora: agora,
+            ),
+          )
+          .timeout(tempoLimiteEnvio);
       _envio = EstadoEnvio.enviado;
     } on Exception {
-      // Falha do serviço (sem internet, Firestore recusou): a tela mostra o
-      // erro e o botão volta a funcionar.
+      // Falha do serviço (Firestore recusou) ou tempo limite esgotado
+      // (TimeoutException também é Exception): a tela mostra o erro e o
+      // botão volta a funcionar.
       _envio = EstadoEnvio.erro;
     }
     notifyListeners();
