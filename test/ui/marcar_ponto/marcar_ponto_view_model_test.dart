@@ -83,12 +83,15 @@ void main() {
       });
     });
 
-    test('localização obtida dentro de Itajaí → não está fora da área', () async {
-      await viewModel.buscarLocalizacao();
+    test(
+      'localização obtida dentro de Itajaí → não está fora da área',
+      () async {
+        await viewModel.buscarLocalizacao();
 
-      expect(viewModel.leitura, same(_dentroDeItajai));
-      expect(viewModel.foraDaArea, isFalse);
-    });
+        expect(viewModel.leitura, same(_dentroDeItajai));
+        expect(viewModel.foraDaArea, isFalse);
+      },
+    );
 
     test('localização obtida fora de Itajaí → fora da área e não deixa '
         'enviar', () async {
@@ -111,21 +114,24 @@ void main() {
     });
 
     // "Permitir localização" e "Tentar de novo" chamam buscarLocalizacao.
-    test('buscar de novo volta para buscando e lê a posição outra vez', () async {
-      // Arrange: a primeira leitura falhou.
-      localizacao.resposta = const FalhaNaLeitura();
-      await viewModel.buscarLocalizacao();
-      localizacao.resposta = _dentroDeItajai;
+    test(
+      'buscar de novo volta para buscando e lê a posição outra vez',
+      () async {
+        // Arrange: a primeira leitura falhou.
+        localizacao.resposta = const FalhaNaLeitura();
+        await viewModel.buscarLocalizacao();
+        localizacao.resposta = _dentroDeItajai;
 
-      // Act: sem await, para ver o estado enquanto lê.
-      final buscando = viewModel.buscarLocalizacao();
+        // Act: sem await, para ver o estado enquanto lê.
+        final buscando = viewModel.buscarLocalizacao();
 
-      // Assert
-      expect(viewModel.leitura, isNull);
-      await buscando;
-      expect(viewModel.leitura, same(_dentroDeItajai));
-      expect(localizacao.leituras, 2);
-    });
+        // Assert
+        expect(viewModel.leitura, isNull);
+        await buscando;
+        expect(viewModel.leitura, same(_dentroDeItajai));
+        expect(localizacao.leituras, 2);
+      },
+    );
   });
 
   group('altura da água', () {
@@ -154,13 +160,15 @@ void main() {
   });
 
   group('botões dos casos sem localização', () {
-    test('"Ligar a localização" abre a tela de localização do celular',
-        () async {
-      await viewModel.ligarLocalizacao();
+    test(
+      '"Ligar a localização" abre a tela de localização do celular',
+      () async {
+        await viewModel.ligarLocalizacao();
 
-      expect(localizacao.aberturasDaLocalizacao, 1);
-      expect(localizacao.aberturasDoApp, 0);
-    });
+        expect(localizacao.aberturasDaLocalizacao, 1);
+        expect(localizacao.aberturasDoApp, 0);
+      },
+    );
 
     test('"Abrir configurações" abre as configurações do app', () async {
       await viewModel.abrirConfiguracoes();
