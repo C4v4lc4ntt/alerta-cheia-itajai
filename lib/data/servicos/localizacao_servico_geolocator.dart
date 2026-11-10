@@ -47,6 +47,19 @@ class LocalizacaoServicoGeolocator implements LocalizacaoServico {
     return _lerPosicao();
   }
 
+  /// Só repassa ao geolocator. O bool de "abriu ou não" é ignorado: se não
+  /// abrir, a tela continua com a mesma mensagem e o mesmo botão.
+  @override
+  Future<void> abrirConfiguracoesDaLocalizacao() async {
+    await _gps.openLocationSettings();
+  }
+
+  /// Só repassa ao geolocator, como o método acima.
+  @override
+  Future<void> abrirConfiguracoesDoApp() async {
+    await _gps.openAppSettings();
+  }
+
   /// Lê a posição uma vez, com o tempo limite. Qualquer erro do GPS (sem
   /// sinal, tempo esgotado) vira [FalhaNaLeitura].
   Future<LeituraLocalizacao> _lerPosicao() async {
