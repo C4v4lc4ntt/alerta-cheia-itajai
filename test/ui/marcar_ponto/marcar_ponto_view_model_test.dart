@@ -7,6 +7,8 @@
 // internet nem da hora real. As posições saem do próprio catálogo areaItajai,
 // sem coordenadas inventadas.
 // =============================================================================
+import 'dart:async';
+
 import 'package:alerta_cheia_itajai/data/catalogo/area_itajai.dart';
 import 'package:alerta_cheia_itajai/domain/models/altura_agua.dart';
 import 'package:alerta_cheia_itajai/domain/models/leitura_localizacao.dart';
@@ -239,6 +241,34 @@ void main() {
 
       expect(pontos.enviados, isEmpty);
       expect(viewModel.envio, EstadoEnvio.nenhum);
+    });
+
+    // Tempo limite do envio (decisão de 10/11): sem resposta em 15 s, a
+    // tela mostra o erro. O testWidgets controla o relógio do teste, então
+    // tester.pump avança o tempo sem esperar de verdade.
+    testWidgets('sem resposta até 14 s → continua enviando', (tester) async {
+      await prontoParaEnviar();
+      pontos.nuncaTermina = true;
+
+      unawaited(viewModel.enviar());
+      await tester.pump(const Duration(seconds: 14));
+
+      expect(viewModel.envio, EstadoEnvio.enviando);
+      // Deixa o tempo limite vencer, para não sobrar relógio pendente.
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('sem resposta em 15 s → erro e deixa tentar de novo', (
+      tester,
+    ) async {
+      await prontoParaEnviar();
+      pontos.nuncaTermina = true;
+
+      unawaited(viewModel.enviar());
+      await tester.pump(const Duration(seconds: 15));
+
+      expect(viewModel.envio, EstadoEnvio.erro);
+      expect(viewModel.podeEnviar, isTrue);
     });
   });
 }

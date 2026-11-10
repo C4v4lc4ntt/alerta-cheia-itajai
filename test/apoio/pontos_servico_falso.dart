@@ -2,8 +2,11 @@
 // pontos_servico_falso.dart — versão de PontosServico para os testes.
 //
 // Em vez de gravar no Firestore, guarda os pontos numa lista para o teste
-// conferir. Pode simular a falha do envio.
+// conferir. Pode simular a falha do envio ou um envio que nunca termina
+// (para testar o tempo limite de 15 s, ciclo 21).
 // =============================================================================
+import 'dart:async';
+
 import 'package:alerta_cheia_itajai/data/servicos/pontos_servico.dart';
 import 'package:alerta_cheia_itajai/domain/models/ponto_alagamento.dart';
 
@@ -15,8 +18,13 @@ class PontosServicoFalso implements PontosServico {
   /// Quando true, simula a falha do envio (sem internet, por exemplo).
   bool deveFalhar = false;
 
+  /// Quando true, o envio nunca termina: um Completer que ninguém completa,
+  /// como um Firestore que não responde.
+  bool nuncaTermina = false;
+
   @override
   Future<void> enviar(PontoAlagamento ponto) async {
+    if (nuncaTermina) return Completer<void>().future;
     if (deveFalhar) throw Exception('Falha simulada no envio.');
     enviados.add(ponto);
   }
