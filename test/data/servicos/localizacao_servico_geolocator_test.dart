@@ -2,7 +2,7 @@
 // localizacao_servico_geolocator_test.dart — RF03: leitura da posição atual
 // do celular, uma vez, com a precisão.
 //
-// Escrito ANTES do código (etapa vermelha do TDD, ciclo 18).
+// Escrito ANTES do código (etapa vermelha do TDD, ciclos 18 e 19).
 // Sem GPS de verdade: o GeolocatorPlatform (a borda com o celular) é trocado
 // por um mock do mocktail, como um @Mock do Mockito sobre um client externo.
 // Cada situação de "sem localização" tem um resultado próprio, para a tela
@@ -169,4 +169,33 @@ void main() {
 
     expect(leitura, isA<FalhaNaLeitura>());
   });
+
+  // ---------------------------------------------------------------------------
+  // Ciclo 19: atalhos dos botões da tela, para o morador resolver sozinho.
+  // ---------------------------------------------------------------------------
+  test('abrirConfiguracoesDaLocalizacao abre a tela do celular para ligar a '
+      'localização', () async {
+    // Arrange
+    when(() => gps.openLocationSettings()).thenAnswer((_) async => true);
+
+    // Act
+    await servico.abrirConfiguracoesDaLocalizacao();
+
+    // Assert
+    verify(() => gps.openLocationSettings()).called(1);
+  });
+
+  test(
+    'abrirConfiguracoesDoApp abre as configurações do Alerta Cheia',
+    () async {
+      // Arrange
+      when(() => gps.openAppSettings()).thenAnswer((_) async => true);
+
+      // Act
+      await servico.abrirConfiguracoesDoApp();
+
+      // Assert
+      verify(() => gps.openAppSettings()).called(1);
+    },
+  );
 }
