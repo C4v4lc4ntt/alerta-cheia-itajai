@@ -2,8 +2,11 @@
 // localizacao_servico_falso.dart — versão de LocalizacaoServico para os testes.
 //
 // Não toca no GPS: devolve a leitura escolhida pelo teste e conta as chamadas,
-// para o teste conferir o que cada botão da tela pediu.
+// para o teste conferir o que cada botão da tela pediu. Pode simular uma
+// leitura que nunca termina (para a tela ficar em "buscando", ciclo 22).
 // =============================================================================
+import 'dart:async';
+
 import 'package:alerta_cheia_itajai/data/servicos/localizacao_servico.dart';
 import 'package:alerta_cheia_itajai/domain/models/leitura_localizacao.dart';
 
@@ -24,9 +27,14 @@ class LocalizacaoServicoFalso implements LocalizacaoServico {
   /// Quantas vezes as configurações do app foram abertas.
   int aberturasDoApp = 0;
 
+  /// Quando true, a leitura nunca termina: um Completer que ninguém
+  /// completa, como um GPS ainda procurando o sinal.
+  bool nuncaTermina = false;
+
   @override
   Future<LeituraLocalizacao> obterAtual() async {
     leituras++;
+    if (nuncaTermina) return Completer<LeituraLocalizacao>().future;
     return resposta;
   }
 
