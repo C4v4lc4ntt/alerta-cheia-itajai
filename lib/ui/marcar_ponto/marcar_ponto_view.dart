@@ -1,15 +1,16 @@
 // =============================================================================
 // marcar_ponto_view.dart — View da tela "Marcar rua alagada" (RF03, D17).
 //
-// ETAPA VERDE: código mínimo para os testes passarem. Ciclo 22a: a
-// localização. Ciclo 22b: a altura da água, o envio, a nota e o rodapé.
+// Ciclo 22a: a localização. Ciclo 22b: a altura da água, o envio, a nota e
+// o rodapé. REFATORAÇÃO (22b): o bloco da localização foi para
+// bloco_localizacao.dart, para esta tela só montar as seções.
 // No MVVM a View só DESENHA o que o ViewModel entrega e chama os métodos dele
 // nos botões; não tem regra de negócio.
 // =============================================================================
 import 'package:flutter/material.dart';
 
 import '../../domain/models/altura_agua.dart';
-import '../../domain/models/leitura_localizacao.dart';
+import 'bloco_localizacao.dart';
 import 'estado_envio.dart';
 import 'marcar_ponto_view_model.dart';
 
@@ -70,7 +71,7 @@ class _MarcarPontoViewState extends State<MarcarPontoView> {
             children: [
               Text('1. Onde está alagado?', style: texto.titleMedium),
               const SizedBox(height: 8),
-              _localizacao(),
+              BlocoLocalizacao(viewModel: viewModel),
               const SizedBox(height: 24),
               Text('2. Qual a altura da água?', style: texto.titleMedium),
               const SizedBox(height: 8),
@@ -130,50 +131,6 @@ class _MarcarPontoViewState extends State<MarcarPontoView> {
     ],
     EstadoEnvio.nenhum || EstadoEnvio.enviando => const [],
   };
-
-  // Um bloco para cada resultado da leitura. O switch numa classe sealed
-  // obriga a tratar todos os casos (o compilador avisa se faltar algum).
-  Widget _localizacao() {
-    final viewModel = widget.viewModel;
-    return switch (viewModel.leitura) {
-      null => const _Buscando(),
-      LocalizacaoObtida() when viewModel.foraDaArea => const Text(
-        'Você está fora de Itajaí. Só é possível marcar pontos dentro do '
-        'município.',
-      ),
-      // A precisão vem com casa decimal; a tela mostra metros inteiros.
-      LocalizacaoObtida(:final precisaoMetros) => Text(
-        'Sua localização atual · precisão de ${precisaoMetros.round()} m',
-      ),
-      GpsDesligado() => _SemLocalizacao(
-        mensagem:
-            'A localização do celular está desligada. Ligue para marcar '
-            'onde está alagado.',
-        botao: 'Ligar a localização',
-        acao: viewModel.ligarLocalizacao,
-      ),
-      PermissaoNegada() => _SemLocalizacao(
-        mensagem:
-            'Precisamos da sua localização para marcar onde está alagado.',
-        botao: 'Permitir localização',
-        acao: viewModel.buscarLocalizacao,
-      ),
-      PermissaoBloqueada() => _SemLocalizacao(
-        mensagem:
-            'A localização está bloqueada para o Alerta Cheia. Libere nas '
-            'configurações do app.',
-        botao: 'Abrir configurações',
-        acao: viewModel.abrirConfiguracoes,
-      ),
-      FalhaNaLeitura() => _SemLocalizacao(
-        mensagem:
-            'Não foi possível achar sua localização. Se puder, vá para um '
-            'lugar aberto e tente de novo.',
-        botao: 'Tentar de novo',
-        acao: viewModel.buscarLocalizacao,
-      ),
-    };
-  }
 }
 
 /// Texto de cada opção de altura (aprovado em 09/11).
@@ -182,49 +139,3 @@ String _rotuloDaAltura(AlturaAgua altura) => switch (altura) {
   AlturaAgua.joelho => 'Joelho · 20 a 50 cm',
   AlturaAgua.cintura => 'Cintura · mais de 50 cm',
 };
-
-/// Indicador girando e o texto, enquanto o GPS procura a posição. Sem botão.
-class _Buscando extends StatelessWidget {
-  const _Buscando();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        SizedBox.square(
-          dimension: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-        SizedBox(width: 12),
-        Expanded(child: Text('Buscando sua localização…')),
-      ],
-    );
-  }
-}
-
-/// Mensagem de um caso sem localização e o botão que resolve o caso.
-class _SemLocalizacao extends StatelessWidget {
-  const _SemLocalizacao({
-    required this.mensagem,
-    required this.botao,
-    required this.acao,
-  });
-
-  final String mensagem;
-  final String botao;
-
-  /// Método do ViewModel chamado pelo botão.
-  final VoidCallback acao;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(mensagem),
-        const SizedBox(height: 8),
-        OutlinedButton(onPressed: acao, child: Text(botao)),
-      ],
-    );
-  }
-}
