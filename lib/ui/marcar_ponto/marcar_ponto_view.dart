@@ -1,13 +1,16 @@
 // =============================================================================
 // marcar_ponto_view.dart — View da tela "Marcar rua alagada" (RF03, D17).
 //
-// ETAPA VERDE (ciclo 22a): código mínimo para os testes da localização.
+// ETAPA VERDE: código mínimo para os testes passarem. Ciclo 22a: a
+// localização. Ciclo 22b: a altura da água, o envio, a nota e o rodapé.
 // No MVVM a View só DESENHA o que o ViewModel entrega e chama os métodos dele
-// nos botões; não tem regra de negócio. A altura e o envio entram no 22b.
+// nos botões; não tem regra de negócio.
 // =============================================================================
 import 'package:flutter/material.dart';
 
+import '../../domain/models/altura_agua.dart';
 import '../../domain/models/leitura_localizacao.dart';
+import 'estado_envio.dart';
 import 'marcar_ponto_view_model.dart';
 
 /// Tela em que o morador marca onde a rua está alagada.
@@ -46,13 +49,22 @@ class _MarcarPontoViewState extends State<MarcarPontoView> {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
+    final viewModel = widget.viewModel;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Marcar rua alagada')),
+      // Fora da lista, para o caminho do 199, do 193 e do 192 ficar sempre
+      // visível, sem rolar a tela (CLAUDE.md §7).
+      bottomNavigationBar: const SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('Em perigo? Ligue 199, 193 ou 192.'),
+        ),
+      ),
       body: SafeArea(
         // Redesenha toda vez que o ViewModel chama notifyListeners().
         child: ListenableBuilder(
-          listenable: widget.viewModel,
+          listenable: viewModel,
           builder: (context, _) => ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -60,18 +72,64 @@ class _MarcarPontoViewState extends State<MarcarPontoView> {
               const SizedBox(height: 8),
               _localizacao(),
               const SizedBox(height: 24),
-              // A ação do botão entra no ciclo 22b, junto com a altura; até
-              // lá ele fica sempre desativado.
-              const FilledButton(
-                onPressed: null,
-                child: Text('Enviar para o mapa'),
+              Text('2. Qual a altura da água?', style: texto.titleMedium),
+              const SizedBox(height: 8),
+              _alturas(),
+              const SizedBox(height: 24),
+              const Text(
+                'Não pedimos seu nome. A marcação fica no mapa por 6 horas. '
+                'Se 3 moradores disserem que a água baixou, ela some antes.',
               ),
+              const SizedBox(height: 16),
+              // Desativado (onPressed null) quando o ViewModel não deixa
+              // enviar: sem posição válida, sem altura, ou durante e depois
+              // do envio (D17 e decisão de 10/11).
+              FilledButton(
+                onPressed: viewModel.podeEnviar ? viewModel.enviar : null,
+                child: Text(
+                  viewModel.envio == EstadoEnvio.enviando
+                      ? 'Enviando…'
+                      : 'Enviar para o mapa',
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._resultadoDoEnvio(),
             ],
           ),
         ),
       ),
     );
   }
+
+  // Uma opção por altura. O ChoiceChip já diz "selecionado" ao leitor de
+  // tela e tem área de toque de 48 px.
+  Widget _alturas() {
+    final viewModel = widget.viewModel;
+    return Wrap(
+      spacing: 8,
+      children: [
+        for (final altura in AlturaAgua.values)
+          ChoiceChip(
+            label: Text(_rotuloDaAltura(altura)),
+            selected: viewModel.altura == altura,
+            onSelected: (_) => viewModel.escolherAltura(altura),
+          ),
+      ],
+    );
+  }
+
+  // Mensagem depois do envio; nada antes de enviar nem durante o envio.
+  List<Widget> _resultadoDoEnvio() => switch (widget.viewModel.envio) {
+    EstadoEnvio.enviado => const [
+      Text('Pronto! A marcação foi enviada para o mapa.'),
+    ],
+    EstadoEnvio.erro => const [
+      Text(
+        'Não foi possível enviar agora. Confira a internet e tente de novo.',
+      ),
+    ],
+    EstadoEnvio.nenhum || EstadoEnvio.enviando => const [],
+  };
 
   // Um bloco para cada resultado da leitura. O switch numa classe sealed
   // obriga a tratar todos os casos (o compilador avisa se faltar algum).
@@ -117,6 +175,13 @@ class _MarcarPontoViewState extends State<MarcarPontoView> {
     };
   }
 }
+
+/// Texto de cada opção de altura (aprovado em 09/11).
+String _rotuloDaAltura(AlturaAgua altura) => switch (altura) {
+  AlturaAgua.canela => 'Canela · até 20 cm',
+  AlturaAgua.joelho => 'Joelho · 20 a 50 cm',
+  AlturaAgua.cintura => 'Cintura · mais de 50 cm',
+};
 
 /// Indicador girando e o texto, enquanto o GPS procura a posição. Sem botão.
 class _Buscando extends StatelessWidget {
