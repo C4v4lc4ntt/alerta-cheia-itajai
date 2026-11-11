@@ -9,6 +9,9 @@ GoogleService-Info.plist
 lib/firebase_options.dart
 firebase_app_id_file.json
 .firebaserc
+# Anotações do FlutterFire (IDs do projeto e dos apps). Só servem para rodar
+# o "flutterfire configure" de novo no PC; o CI não usa (decidido em 07/11/2026).
+firebase.json
 .env
 .env.*
 *.keystore
