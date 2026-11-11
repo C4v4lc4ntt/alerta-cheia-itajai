@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// Regras do Cloud Firestore do Alerta Cheia Itajaí (D17).
+// Sem login: estas regras são a única validação do lado do servidor.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Ponto válido: só os 4 campos da D17, altura conhecida,
+    // posição dentro do retângulo de Itajaí (borda conta como dentro)
+    // e data igual ao horário do servidor (impede datas falsas).
+    function pontoValido(ponto) {
+      return ponto.keys().hasOnly(['latitude', 'longitude', 'altura', 'criadoEm'])
+        && ponto.keys().hasAll(['latitude', 'longitude', 'altura', 'criadoEm'])
+        && ponto.latitude is number
+        && ponto.longitude is number
+        && ponto.latitude >= -27.0960000 && ponto.latitude <= -26.8378087
+        && ponto.longitude >= -48.8690000 && ponto.longitude <= -48.6213454
+        && ponto.altura in ['canela', 'joelho', 'cintura']
+        && ponto.criadoEm == request.time;
+    }
+
+    // Coleção pontos: leitura pública (o mapa é de todos), criação
+    // só de ponto válido, alterar e apagar bloqueados (o RF04 abrirá
+    // só o contador do "Já baixou").
+    match /pontos/{pontoId} {
+      allow read: if true;
+      allow create: if pontoValido(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // Qualquer outra coleção continua fechada (nada liberado = recusado).
+  }
+}
