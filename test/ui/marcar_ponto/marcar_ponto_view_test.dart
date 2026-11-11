@@ -1,6 +1,7 @@
 // =============================================================================
-// marcar_ponto_view_test.dart — RF03 (D17): a tela "Marcar rua alagada",
-// parte 1 (ciclo 22a): a localização.
+// marcar_ponto_view_test.dart — RF03 (D17): a tela "Marcar rua alagada".
+// Ciclo 22a: a localização. Ciclo 22b: a altura da água, o envio, os textos
+// fixos (nota e rodapé de emergência) e a acessibilidade.
 //
 // Escrito ANTES do código (etapa vermelha do TDD). Usa o ViewModel de verdade
 // com os serviços falsos de test/apoio/: a tela é testada do jeito que o
@@ -8,6 +9,7 @@
 // do catálogo areaItajai, sem coordenadas inventadas.
 // =============================================================================
 import 'package:alerta_cheia_itajai/data/catalogo/area_itajai.dart';
+import 'package:alerta_cheia_itajai/domain/models/altura_agua.dart';
 import 'package:alerta_cheia_itajai/domain/models/leitura_localizacao.dart';
 import 'package:alerta_cheia_itajai/ui/marcar_ponto/marcar_ponto_view.dart';
 import 'package:alerta_cheia_itajai/ui/marcar_ponto/marcar_ponto_view_model.dart';
@@ -35,6 +37,19 @@ final _foraDeItajai = LocalizacaoObtida(
 
 const _buscando = 'Buscando sua localização…';
 const _precisao = 'Sua localização atual · precisão de 12 m';
+const _enviar = 'Enviar para o mapa';
+const _enviando = 'Enviando…';
+const _enviado = 'Pronto! A marcação foi enviada para o mapa.';
+const _erroNoEnvio =
+    'Não foi possível enviar agora. Confira a internet e tente de novo.';
+
+// Rótulo de cada opção de altura (textos aprovados em 09/11).
+const _rotulosDaAltura = {
+  AlturaAgua.canela: 'Canela · até 20 cm',
+  AlturaAgua.joelho: 'Joelho · 20 a 50 cm',
+  AlturaAgua.cintura: 'Cintura · mais de 50 cm',
+};
+
 const _foraDaArea =
     'Você está fora de Itajaí. Só é possível marcar pontos dentro do '
     'município.';
@@ -49,13 +64,15 @@ const _botoesDeLocalizacao = [
 
 void main() {
   late LocalizacaoServicoFalso localizacao;
+  late PontosServicoFalso pontos;
   late MarcarPontoViewModel viewModel;
 
   setUp(() {
     localizacao = LocalizacaoServicoFalso(resposta: _dentroDeItajai);
+    pontos = PontosServicoFalso();
     viewModel = MarcarPontoViewModel(
       localizacao: localizacao,
-      pontos: PontosServicoFalso(),
+      pontos: pontos,
       agora: () => DateTime.utc(2026, 11, 10, 22),
     );
   });
@@ -80,7 +97,21 @@ void main() {
 
   // D17: sem posição válida, o envio fica desativado.
   void conferirEnvioDesativado(WidgetTester tester) =>
-      expect(botao(tester, 'Enviar para o mapa').onPressed, isNull);
+      expect(botao(tester, _enviar).onPressed, isNull);
+
+  // Rola a tela até o texto aparecer e toca nele (numa tela pequena, a
+  // altura e o botão podem ficar abaixo da dobra).
+  Future<void> tocar(WidgetTester tester, String texto) async {
+    await tester.ensureVisible(find.text(texto));
+    await tester.tap(find.text(texto));
+  }
+
+  // Deixa a tela pronta para enviar: posição dentro de Itajaí e joelho.
+  Future<void> prepararEnvio(WidgetTester tester) async {
+    await abrirTela(tester);
+    await tocar(tester, _rotulosDaAltura[AlturaAgua.joelho]!);
+    await tester.pumpAndSettle();
+  }
 
   testWidgets('mostra o título "Marcar rua alagada"', (tester) async {
     await abrirTela(tester);
@@ -230,5 +261,163 @@ void main() {
     // Assert: leu de novo e a tela mostra a posição nova.
     expect(localizacao.leituras, 2);
     expect(find.text(_precisao), findsOneWidget);
+  });
+
+  // --------------------------------------------------------------------------
+  // Ciclo 22b — altura da água
+  // --------------------------------------------------------------------------
+
+  testWidgets('mostra a pergunta da altura e as 3 opções com as faixas', (
+    tester,
+  ) async {
+    await abrirTela(tester);
+
+    expect(find.text('2. Qual a altura da água?'), findsOneWidget);
+    for (final rotulo in _rotulosDaAltura.values) {
+      expect(find.text(rotulo), findsOneWidget);
+    }
+  });
+
+  _rotulosDaAltura.forEach((altura, rotulo) {
+    testWidgets('tocar em "$rotulo" → escolhe ${altura.name}', (tester) async {
+      await abrirTela(tester);
+
+      await tocar(tester, rotulo);
+      await tester.pumpAndSettle();
+
+      expect(viewModel.altura, altura);
+    });
+  });
+
+  testWidgets('a altura escolhida é anunciada como selecionada', (
+    tester,
+  ) async {
+    await prepararEnvio(tester);
+
+    // O leitor de tela diz "selecionado" só na opção escolhida.
+    expect(
+      tester.getSemantics(find.text(_rotulosDaAltura[AlturaAgua.joelho]!)),
+      isSemantics(isSelected: true),
+    );
+    expect(
+      tester.getSemantics(find.text(_rotulosDaAltura[AlturaAgua.canela]!)),
+      isSemantics(isSelected: false),
+    );
+  });
+
+  // --------------------------------------------------------------------------
+  // Ciclo 22b — envio
+  // --------------------------------------------------------------------------
+
+  testWidgets('posição dentro e sem altura → envio desativado', (tester) async {
+    await abrirTela(tester);
+
+    conferirEnvioDesativado(tester);
+  });
+
+  testWidgets('posição dentro e altura → envio ativado', (tester) async {
+    await prepararEnvio(tester);
+
+    expect(botao(tester, _enviar).onPressed, isNotNull);
+  });
+
+  testWidgets('enviar → manda o ponto, mostra "Pronto!" e desativa o botão', (
+    tester,
+  ) async {
+    await prepararEnvio(tester);
+
+    await tocar(tester, _enviar);
+    await tester.pumpAndSettle();
+
+    expect(pontos.enviados, hasLength(1));
+    expect(pontos.enviados.single.altura, AlturaAgua.joelho);
+    expect(find.text(_enviado), findsOneWidget);
+    // Desativado depois do envio, para um segundo toque não duplicar.
+    conferirEnvioDesativado(tester);
+  });
+
+  testWidgets('enquanto envia → botão "Enviando…" desativado', (tester) async {
+    // Arrange: o "Firestore" nunca responde.
+    pontos.nuncaTermina = true;
+    await prepararEnvio(tester);
+
+    // Act: um quadro só, com o envio ainda em andamento.
+    await tocar(tester, _enviar);
+    await tester.pump();
+
+    // Assert
+    expect(find.text(_enviando), findsOneWidget);
+    expect(find.text(_enviar), findsNothing);
+    expect(botao(tester, _enviando).onPressed, isNull);
+
+    // Deixa o tempo limite vencer, para o testWidgets não reprovar o teste
+    // por temporizador pendente.
+    await tester.pump(MarcarPontoViewModel.tempoLimiteEnvio);
+  });
+
+  testWidgets('falha no envio → mensagem de erro e o botão volta a funcionar', (
+    tester,
+  ) async {
+    pontos.deveFalhar = true;
+    await prepararEnvio(tester);
+
+    await tocar(tester, _enviar);
+    await tester.pumpAndSettle();
+
+    expect(find.text(_erroNoEnvio), findsOneWidget);
+    expect(find.text(_enviado), findsNothing);
+    expect(botao(tester, _enviar).onPressed, isNotNull);
+  });
+
+  // --------------------------------------------------------------------------
+  // Ciclo 22b — textos fixos
+  // --------------------------------------------------------------------------
+
+  testWidgets('mostra a nota de privacidade e de duração da marcação', (
+    tester,
+  ) async {
+    await abrirTela(tester);
+
+    expect(
+      find.text(
+        'Não pedimos seu nome. A marcação fica no mapa por 6 horas. Se 3 '
+        'moradores disserem que a água baixou, ela some antes.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('mostra o rodapé de emergência sem precisar rolar a tela', (
+    tester,
+  ) async {
+    await abrirTela(tester);
+
+    // CLAUDE.md §7: o caminho para o 199, o 193 e o 192 sempre visível.
+    final rodape = find.text('Em perigo? Ligue 199, 193 ou 192.');
+    expect(rodape, findsOneWidget);
+    expect(tester.getRect(rodape).bottom, lessThanOrEqualTo(600));
+  });
+
+  // --------------------------------------------------------------------------
+  // Ciclo 22b — acessibilidade (alvos de 48 px e botões com rótulo)
+  // --------------------------------------------------------------------------
+
+  testWidgets('pronta para enviar → alvos de 48 px e botões com rótulo', (
+    tester,
+  ) async {
+    await prepararEnvio(tester);
+
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+  });
+
+  testWidgets('sem localização → alvos de 48 px e botões com rótulo', (
+    tester,
+  ) async {
+    localizacao.resposta = const GpsDesligado();
+    await abrirTela(tester);
+
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
   });
 }
