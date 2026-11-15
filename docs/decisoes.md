@@ -45,6 +45,10 @@ Decisões que mudam ou detalham os requisitos do relatório da Etapa 1. Cada uma
 
 **Por quê:** garantir os seis requisitos funcionando, com TDD e validação com moradores, até 05/12/2026.
 **Testes:** RF02 — mudança de estágio gera notificação local, mesmo estágio não gera; RF04 — ponto com mais de 6 h desde a criação fica inativo, e ponto com 3 contestações fica inativo mesmo dentro do prazo.
+**Adendo (15/11/2026), limite das 6 h:** o ponto fica inativo **a partir de** 6 h
+depois de criado (`agora − criadoEm ≥ 6 h`), pelo mesmo critério das cotas (D02:
+atingir o limite já conta). Testes de valor-limite: 5 h 59 min 59 s → ativo;
+exatamente 6 h → inativo; 6 h 0 min 1 s → inativo.
 
 
 ## D07 · Dados reais do portal da Defesa Civil (19/10/2026)
