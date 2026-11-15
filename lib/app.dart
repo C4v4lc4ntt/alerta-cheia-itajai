@@ -14,6 +14,7 @@ import 'ui/ajustes/ajustes_view_model.dart';
 import 'ui/inicio/inicio_view.dart';
 import 'ui/inicio/inicio_view_model.dart';
 import 'ui/mapa/mapa_view.dart';
+import 'ui/mapa/mapa_view_model.dart';
 import 'ui/marcar_ponto/marcar_ponto_view_model.dart';
 
 /// Widget raiz do aplicativo.
@@ -27,6 +28,7 @@ class AlertaCheiaApp extends StatelessWidget {
     required this.inicioViewModel,
     required this.ajustesViewModel,
     this.criarMarcarPonto,
+    this.criarMapa,
   });
 
   /// ViewModel entregue à tela Início.
@@ -39,6 +41,10 @@ class AlertaCheiaApp extends StatelessWidget {
   /// ligou: o botão "Marcar rua alagada" aparece desativado.
   final MarcarPontoViewModel Function()? criarMarcarPonto;
 
+  /// Repassado à aba Mapa (RF04, ciclo 6c). É null quando o Firebase não
+  /// ligou: a aba fica sem mapa.
+  final MapaViewModel Function()? criarMapa;
+
   @override
   Widget build(BuildContext context) {
     // MaterialApp configura tema, título e a primeira tela exibida.
@@ -50,6 +56,7 @@ class AlertaCheiaApp extends StatelessWidget {
         inicioViewModel: inicioViewModel,
         ajustesViewModel: ajustesViewModel,
         criarMarcarPonto: criarMarcarPonto,
+        criarMapa: criarMapa,
       ),
     );
   }
@@ -66,6 +73,7 @@ class NavegacaoPrincipal extends StatefulWidget {
     required this.inicioViewModel,
     required this.ajustesViewModel,
     this.criarMarcarPonto,
+    this.criarMapa,
   });
 
   /// ViewModel entregue à tela Início.
@@ -76,6 +84,9 @@ class NavegacaoPrincipal extends StatefulWidget {
 
   /// Repassado à aba Mapa; null quando o Firebase não ligou.
   final MarcarPontoViewModel Function()? criarMarcarPonto;
+
+  /// Ver [AlertaCheiaApp.criarMapa].
+  final MapaViewModel Function()? criarMapa;
 
   @override
   State<NavegacaoPrincipal> createState() => _NavegacaoPrincipalState();
@@ -97,7 +108,11 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
         aoEscolherBairro: () => setState(() => _abaAtual = 3),
       ),
       // Ciclo 23: a aba Mapa recebe como criar a tela de marcar (RF03).
-      MapaView(criarMarcarPonto: widget.criarMarcarPonto),
+      // RF04 (ciclo 6c): e como criar o ViewModel do mapa.
+      MapaView(
+        criarMarcarPonto: widget.criarMarcarPonto,
+        criarMapa: widget.criarMapa,
+      ),
       const AjudaView(),
       AjustesView(viewModel: widget.ajustesViewModel),
     ];

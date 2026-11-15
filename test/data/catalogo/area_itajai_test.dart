@@ -4,6 +4,9 @@
 // Escrito ANTES do código (etapa vermelha do TDD).
 // Fonte: OpenStreetMap, relation 296666, consulta de 09/11/2026.
 // Valor-limite em graus: 0,0000001° (cerca de 1 cm no chão).
+// RF04 (D13, ciclo 5c): centroItajai, onde o mapa abre sem a posição do
+// morador. Fonte: Nominatim, "Centre Point" da relation 296666 (ponto da
+// cidade, linked_place = city), consulta de 15/11/2026.
 // =============================================================================
 import 'package:alerta_cheia_itajai/data/catalogo/area_itajai.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,6 +62,19 @@ void main() {
       test(nome, () {
         expect(areaItajai.contem(latitude, longitude), esperado);
       });
+    });
+  });
+
+  group('centroItajai', () {
+    test('ponto da cidade no OpenStreetMap (relation 296666, 15/11/2026)', () {
+      expect(centroItajai, (latitude: -26.9046787, longitude: -48.6552979));
+    });
+
+    test('fica dentro da área de Itajaí', () {
+      expect(
+        areaItajai.contem(centroItajai.latitude, centroItajai.longitude),
+        isTrue,
+      );
     });
   });
 }

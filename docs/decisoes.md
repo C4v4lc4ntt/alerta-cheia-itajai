@@ -45,6 +45,10 @@ Decisões que mudam ou detalham os requisitos do relatório da Etapa 1. Cada uma
 
 **Por quê:** garantir os seis requisitos funcionando, com TDD e validação com moradores, até 05/12/2026.
 **Testes:** RF02 — mudança de estágio gera notificação local, mesmo estágio não gera; RF04 — ponto com mais de 6 h desde a criação fica inativo, e ponto com 3 contestações fica inativo mesmo dentro do prazo.
+**Adendo (15/11/2026), limite das 6 h:** o ponto fica inativo **a partir de** 6 h
+depois de criado (`agora − criadoEm ≥ 6 h`), pelo mesmo critério das cotas (D02:
+atingir o limite já conta). Testes de valor-limite: 5 h 59 min 59 s → ativo;
+exatamente 6 h → inativo; 6 h 0 min 1 s → inativo.
 
 
 ## D07 · Dados reais do portal da Defesa Civil (19/10/2026)
@@ -154,6 +158,31 @@ O RF04 previa só exibir os pontos ativos, e o GPS era opcional.
 posição do morador (LGPD) e sem impedir o uso de quem negar a permissão.
 **Testes:** com permissão, o mapa centraliza na posição recebida; sem permissão ou
 com falha no GPS, centraliza em Itajaí.
+
+**Adendo (15/11/2026), ViewModel do mapa (RF04, ciclos 5a a 5c):**
+- **Centro de Itajaí:** `centroItajai` = -26.9046787, -48.6552979, no
+  `area_itajai.dart`. Fonte: Nominatim, "Centre Point" da relation 296666 (ponto da
+  cidade, `linked_place = city`), consulta de 15/11/2026.
+- **Posição fora da área:** também centraliza em Itajaí, porque o mapa só tem pontos
+  dentro do município (mesmo critério do "fora da área" do RF03, D18).
+- **Revisão a cada minuto:** além de refiltrar a cada lista nova do Firestore, o
+  `MapaViewModel` refiltra os pontos a cada 1 minuto, para o ponto sair da tela no
+  máximo 1 minuto depois de completar 6 h mesmo sem lista nova. Ao fechar o mapa,
+  a inscrição no Firestore e o `Timer` são cancelados.
+- **"Já baixou" sem esperar o servidor:** o botão do ponto é desativado na hora do
+  toque ("Você já avisou"); sem internet, o +1 fica na fila do Firestore e é enviado
+  depois. Se o servidor recusar, o botão volta a funcionar.
+
+**Descartadas:** o meio do retângulo `areaItajai` como centro (inclui mar e partes de
+outros municípios); centralizar numa posição fora da área (mapa sem pontos à vista);
+refiltrar só na chegada de lista nova (ponto vencido ficaria na tela com o mapa
+aberto); esperar o servidor com tempo limite no "Já baixou" (mostraria erro sem
+internet com o +1 ainda na fila).
+**Testes:** `area_itajai_test.dart` (valores da fonte e ponto dentro da área);
+`mapa_view_model_test.dart` (só os ativos, aviso à tela, revisão de 1 minuto com
+`tester.pump`, inscrição cancelada no `dispose`, botão desativado na hora e liberado
+com falha, centro pela posição, pelos 4 casos sem posição e pela posição fora da
+área).
 
 ## D14 · Verificação do estágio com o app fechado (04/11/2026)
 **Contexto:** a notificação local da D06 depende de o app conferir o estágio. Sem
@@ -329,3 +358,73 @@ baixou" (RF04).
 nas regras, por isso as regras são testadas à parte (adendo da D17). Valor-limite no
 envio (14 s ainda enviando, 15 s erro); 4 casos sem localização em tabela; reabrir a
 tela cria um ViewModel novo (teste de widget e conferido no celular em 11/11).
+
+**Adendo (15/11/2026), contador do "Já baixou" (RF04):** o número de "Já baixou"
+fica no próprio `PontoAlagamento`, no campo `final int jaBaixou`. O
+`PontoAlagamento.registrar` recebe o parâmetro opcional `int jaBaixou = 0`, então
+um ponto novo começa com 0 e as chamadas do RF03 não mudam. Um valor negativo lança
+`ArgumentError` com o valor recebido. A regra `pontoAtivo` usa a constante
+`limiteJaBaixou = 3`: o ponto fica ativo enquanto `agora − criadoEm < 6 h` **e**
+`jaBaixou < 3` (o que acontecer primeiro o tira do mapa).
+**Descartada:** passar o contador separado para o `pontoAtivo`. A leitura do Firestore
+teria de devolver o ponto e o contador em separado, e o ponto deixaria de
+representar sozinho o que está no mapa.
+**Testes:** valor-limite em volta de 3, uma hora depois da criação (longe das 6 h):
+2 → ativo, 3 → inativo, 4 → inativo. Sem informar o contador, `jaBaixou` = 0.
+`jaBaixou: -1` → `ArgumentError`.
+
+**Adendo (15/11/2026), leitura e "Já baixou" no Firestore (RF04):**
+- **Leitura em tempo real:** `PontosServico.acompanharPontos(agora:)` devolve um
+  `Stream` com os `snapshots()` da coleção, e o mapa se atualiza quando outro morador
+  marca um ponto. A consulta busca só os pontos com `criadoEm > agora − 6 h`
+  (com exatamente 6 h o ponto já sai, adendo da D06), porque apagar é bloqueado e a
+  coleção só cresce. O corte pelos 3 "Já baixou" e o passar das horas com o mapa
+  aberto ficam com a regra `pontoAtivo`.
+- **ID do ponto:** campo opcional `String? id` no `PontoAlagamento` (como o `@Id` de
+  uma entidade JPA): `null` no ponto recém-marcado, preenchido com o ID do documento
+  na leitura. O envio do "Já baixou" é `PontosServico.confirmarJaBaixou(id)`, com
+  `FieldValue.increment(1)` (campo ausente conta como 0).
+- **Uma confirmação por ponto:** o ViewModel do mapa guarda em memória os IDs já
+  confirmados por este celular, e o botão daquele ponto fica desativado com "Você já
+  avisou". Nada é gravado em disco nem enviado sobre a pessoa (LGPD).
+- **Regras do Firestore:** `update` só se o único campo alterado for o `jaBaixou` e o
+  novo valor for o antigo + 1 (antigo ausente = 0); `delete` continua bloqueado.
+
+**Descartadas:** leitura única (`Future`), que exigiria reabrir a aba; ler a coleção
+inteira; um tipo `PontoNoMapa(id, ponto)` separado (mudaria o `Stream` já testado);
+toque sem controle (um toque duplo já contaria 2); guardar as confirmações no
+celular (mais um ciclo, com o prazo de 19/11); limitar o +1 às 6 h e a 3 nas regras
+(um +1 num ponto vencido não aparece no mapa).
+**Limitação:** sem login, nada impede quem fecha e abre o app (ou reinstala) de
+confirmar de novo; o controle evita só o toque repetido sem querer.
+**Testes:** leitura com `FakeFirebaseFirestore` (valores-limite em volta das 6 h,
+documento inválido de fora, segunda lista em tempo real); `confirmarJaBaixou` soma 1
+no documento certo. As regras são testadas no Rules Playground (+1 aceito, +2
+recusado, mudar a altura recusado, apagar recusado), porque o `fake_cloud_firestore`
+não executa regras (adendo da D17).
+
+## D19 · Pacotes flutter_map e latlong2 para o mapa (15/11/2026)
+**Contexto:** o RF04 e a D13 pedem um mapa de ruas com os pontos de alagamento,
+centralizado pela posição do morador ou em Itajaí. Desenhar o mapa só com o Flutter
+exigiria baixar e montar os ladrilhos, converter coordenadas em pixels e tratar os
+gestos de arrastar e aproximar.
+**Decisão:** usar o `flutter_map` **8.3.2** (publicado em 27/08/2026, licença
+BSD-3-Clause) com os ladrilhos do OpenStreetMap, e o `latlong2` **0.10.1** (27/04/2026),
+que dá o tipo `LatLng` usado pelo `flutter_map`. Versões exatas, sem `^`, como os
+outros pacotes do Firebase e do GPS; consultadas na API do pub.dev em 15/11/2026.
+- Compatibilidade: o `flutter_map` 8.3.2 pede Dart ≥ 3.6 e Flutter ≥ 3.27 (o projeto
+  usa Dart 3.13 e Flutter 3.47.7 no CI) e aceita `latlong2` de 0.9.1 até antes de
+  0.11.0. Traz pacotes indiretos (`path_provider`, `uuid`, `proj4dart` e outros), que
+  aparecem só no `pubspec.lock`.
+- Ladrilhos: servidor público do OpenStreetMap, sem chave nem conta. A tela mostra a
+  atribuição "© OpenStreetMap" e o app se identifica pelo nome do pacote, como pede a
+  política de uso dos ladrilhos; o uso é pequeno (validação com poucos moradores).
+- Nenhum dado do morador é enviado ao servidor de ladrilhos além do pedido das
+  imagens da região exibida.
+**Por quê:** é o pacote de mapa mais usado no Flutter sem fins comerciais, sem chave
+de API e sem custo, e já estava previsto no plano do RF04. O Google Maps foi
+descartado por exigir chave de API e conta de faturamento; desenhar o mapa à mão, pelo
+prazo de 19/11.
+**Testes:** o `MapaViewModel` (D13, adendo) não depende do `flutter_map`. Nos testes de
+widget, a camada de ladrilhos fica desligada, para nenhum teste acessar a internet; os
+marcadores e o botão "Já baixou" são testados sem rede.

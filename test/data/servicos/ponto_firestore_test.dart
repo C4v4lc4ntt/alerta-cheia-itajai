@@ -1,6 +1,7 @@
 // =============================================================================
-// ponto_firestore_test.dart — RF03 (D17): conversão do ponto de alagamento
-// para o documento do Firestore e de volta.
+// ponto_firestore_test.dart — RF03 (D17) e RF04 (adendo da D18): conversão
+// do ponto de alagamento para o documento do Firestore e de volta, com o ID
+// do documento (ciclo 4a).
 //
 // Escrito ANTES do código (etapa vermelha do TDD).
 // Sem rede e sem iniciar o Firebase: FieldValue e Timestamp são objetos comuns.
@@ -88,6 +89,68 @@ void main() {
       test(nome, () {
         expect(pontoDoFirestore(dados, area: areaItajai), isNull);
       });
+    });
+
+    // RF04 (adendo da D18): o contador "Já baixou" vem no documento. As
+    // regras atuais criam o ponto só com os 4 campos da D17, então a falta
+    // do campo vale 0.
+    test('sem o campo jaBaixou → 0', () {
+      final ponto = pontoDoFirestore(documento(), area: areaItajai);
+
+      expect(ponto!.jaBaixou, 0);
+    });
+
+    // Valores-limite: -1 é o primeiro inválido e 0 o primeiro válido. Com 3
+    // o documento continua válido; tirar o ponto do mapa é papel da regra
+    // pontoAtivo, não da conversão.
+    final contadoresValidos = <String, int>{
+      'jaBaixou 0 → 0': 0,
+      'jaBaixou 3 → 3': 3,
+    };
+
+    contadoresValidos.forEach((nome, valor) {
+      test(nome, () {
+        // Act
+        final ponto = pontoDoFirestore({
+          ...documento(),
+          'jaBaixou': valor,
+        }, area: areaItajai);
+
+        // Assert
+        expect(ponto!.jaBaixou, valor);
+      });
+    });
+
+    // Contador estranho é dado corrompido: o documento é ignorado, como os
+    // outros inválidos, em vez de derrubar a leitura com o ArgumentError do
+    // registrar.
+    final contadoresInvalidos = <String, Object>{
+      'jaBaixou -1 → ignorado': -1,
+      'jaBaixou como texto → ignorado': '2',
+    };
+
+    contadoresInvalidos.forEach((nome, valor) {
+      test(nome, () {
+        expect(
+          pontoDoFirestore({
+            ...documento(),
+            'jaBaixou': valor,
+          }, area: areaItajai),
+          isNull,
+        );
+      });
+    });
+
+    // RF04 (ciclo 4a): o ID não está nos dados do documento, por isso
+    // chega num parâmetro à parte.
+    test('documento com id → ponto com o mesmo id', () {
+      final ponto = pontoDoFirestore(
+        documento(),
+        area: areaItajai,
+        id: 'abc123',
+      );
+
+      expect(ponto!.id, 'abc123');
     });
   });
 }

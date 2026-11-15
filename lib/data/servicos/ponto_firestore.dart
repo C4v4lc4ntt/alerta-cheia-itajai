@@ -1,11 +1,14 @@
 // =============================================================================
 // ponto_firestore.dart — conversão do ponto de alagamento para o documento do
-// Firestore e de volta (RF03, D17).
+// Firestore e de volta (RF03, D17; RF04, adendo da D18).
 //
 // ETAPA VERDE: código mínimo para os testes passarem.
 // Fica em data/ (e não em domain/) porque usa tipos do cloud_firestore: as
 // regras exigem criadoEm == request.time, então a data vai como
 // FieldValue.serverTimestamp() e volta como Timestamp.
+// Ciclo 3a do RF04: a leitura traz o contador "Já baixou" (falta do campo
+// vale 0; negativo ou de outro tipo, o documento é ignorado). Ciclo 4a: o
+// ponto lido leva o ID do documento, que chega à parte dos dados.
 // =============================================================================
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -30,6 +33,7 @@ Map<String, Object> pontoParaFirestore(PontoAlagamento ponto) => {
 PontoAlagamento? pontoDoFirestore(
   Map<String, dynamic> dados, {
   required AreaRetangular area,
+  String? id,
 }) {
   // O padrão só casa se os 4 campos existirem e tiverem o tipo certo.
   if (dados case {
@@ -38,8 +42,16 @@ PontoAlagamento? pontoDoFirestore(
     'altura': final String nomeAltura,
     'criadoEm': final Timestamp criadoEm,
   }) {
+    // As regras atuais criam o ponto só com os 4 campos da D17, então a
+    // falta do "Já baixou" vale 0 (como o getOrDefault do Java).
+    final jaBaixou = dados['jaBaixou'] ?? 0;
     final altura = AlturaAgua.values.asNameMap()[nomeAltura];
-    if (altura == null || !area.contem(latitude, longitude)) {
+    // Contador que não é um inteiro ≥ 0 é dado corrompido: ignorar o
+    // documento evita o ArgumentError do registrar no meio da leitura.
+    if (jaBaixou is! int ||
+        jaBaixou < 0 ||
+        altura == null ||
+        !area.contem(latitude, longitude)) {
       return null;
     }
     // Reaproveita a validação do domínio. A data é a do servidor, em UTC,
@@ -50,6 +62,8 @@ PontoAlagamento? pontoDoFirestore(
       altura: altura,
       area: area,
       agora: () => criadoEm.toDate().toUtc(),
+      jaBaixou: jaBaixou,
+      id: id,
     );
   }
   return null;

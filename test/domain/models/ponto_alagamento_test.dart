@@ -1,5 +1,6 @@
 // =============================================================================
 // ponto_alagamento_test.dart — RF03 (D17): registro de um ponto de alagamento.
+// RF04: contador "Já baixou" (ciclo 2) e ID do documento (ciclo 4a).
 //
 // Escrito ANTES do código (etapa vermelha do TDD).
 // Teste planejado na Etapa 1 (Tabela 5): registro sem localização ou sem
@@ -88,6 +89,62 @@ void main() {
       expect(ponto.longitude, longitudeValida);
       expect(ponto.altura, AlturaAgua.cintura);
       expect(ponto.criadoEm, momento);
+    });
+
+    test('sem informar "Já baixou" → começa em 0', () {
+      // Act
+      final ponto = PontoAlagamento.registrar(
+        latitude: latitudeValida,
+        longitude: longitudeValida,
+        altura: AlturaAgua.joelho,
+        area: areaItajai,
+        agora: relogio,
+      );
+
+      // Assert
+      expect(ponto.jaBaixou, 0);
+    });
+
+    test('"Já baixou" negativo → ArgumentError', () {
+      // -1 é o valor logo abaixo do menor válido (0).
+      expect(
+        () => PontoAlagamento.registrar(
+          latitude: latitudeValida,
+          longitude: longitudeValida,
+          altura: AlturaAgua.joelho,
+          area: areaItajai,
+          agora: relogio,
+          jaBaixou: -1,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    // RF04 (adendo da D18): o ID do documento do Firestore, como o @Id de
+    // uma entidade JPA. O ponto recém-marcado ainda não foi gravado.
+    test('ponto recém-marcado → sem id', () {
+      final ponto = PontoAlagamento.registrar(
+        latitude: latitudeValida,
+        longitude: longitudeValida,
+        altura: AlturaAgua.joelho,
+        area: areaItajai,
+        agora: relogio,
+      );
+
+      expect(ponto.id, isNull);
+    });
+
+    test('ponto com o id do documento → guarda o id', () {
+      final ponto = PontoAlagamento.registrar(
+        latitude: latitudeValida,
+        longitude: longitudeValida,
+        altura: AlturaAgua.joelho,
+        area: areaItajai,
+        agora: relogio,
+        id: 'abc123',
+      );
+
+      expect(ponto.id, 'abc123');
     });
   });
 }
