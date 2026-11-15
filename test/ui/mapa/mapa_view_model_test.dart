@@ -1,6 +1,7 @@
 // =============================================================================
 // mapa_view_model_test.dart — RF04 (D06 e adendos da D06 e da D18): o estado
-// da aba Mapa.
+// da aba Mapa. Ciclo 5a: só os pontos ativos; ciclo 5b: "Já baixou" uma vez
+// por ponto.
 //
 // Escrito ANTES do código (etapa vermelha do TDD). Usa o serviço falso de
 // pontos, que manda listas como o Firestore, e um relógio controlado pelo
@@ -8,6 +9,8 @@
 // relógio do teste sem esperar de verdade. As posições saem do catálogo
 // areaItajai, sem coordenadas inventadas.
 // =============================================================================
+import 'dart:async';
+
 import 'package:alerta_cheia_itajai/data/catalogo/area_itajai.dart';
 import 'package:alerta_cheia_itajai/domain/models/altura_agua.dart';
 import 'package:alerta_cheia_itajai/domain/models/ponto_alagamento.dart';
@@ -106,5 +109,38 @@ void main() {
     viewModel.dispose();
 
     expect(pontos.listas.hasListener, isFalse);
+  });
+
+  // RF04 (adendo da D18, ciclo 5b): uma confirmação por ponto enquanto o
+  // app estiver aberto. O botão é marcado na hora do toque, sem esperar o
+  // servidor (sem internet, o +1 fica na fila do Firestore).
+  group('"Já baixou"', () {
+    test('tocar → envia o +1 daquele ponto', () async {
+      // Act
+      await viewModel.confirmarJaBaixou('abc123');
+
+      // Assert
+      expect(pontos.confirmados, ['abc123']);
+    });
+
+    test('depois do toque → o botão daquele ponto fica desativado na hora', () {
+      // Arrange: o envio nunca termina, como um celular sem internet.
+      pontos.nuncaTermina = true;
+
+      // Act: sem await, como o toque na tela.
+      unawaited(viewModel.confirmarJaBaixou('abc123'));
+
+      // Assert: o ponto tocado fica bloqueado; o outro continua livre.
+      expect(viewModel.podeConfirmar('abc123'), isFalse);
+      expect(viewModel.podeConfirmar('outro'), isTrue);
+    });
+
+    test('servidor recusou → o botão volta a funcionar', () async {
+      pontos.deveFalhar = true;
+
+      await viewModel.confirmarJaBaixou('abc123');
+
+      expect(viewModel.podeConfirmar('abc123'), isTrue);
+    });
   });
 }
