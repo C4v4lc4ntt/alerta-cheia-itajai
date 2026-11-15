@@ -402,3 +402,29 @@ documento inválido de fora, segunda lista em tempo real); `confirmarJaBaixou` s
 no documento certo. As regras são testadas no Rules Playground (+1 aceito, +2
 recusado, mudar a altura recusado, apagar recusado), porque o `fake_cloud_firestore`
 não executa regras (adendo da D17).
+
+## D19 · Pacotes flutter_map e latlong2 para o mapa (15/11/2026)
+**Contexto:** o RF04 e a D13 pedem um mapa de ruas com os pontos de alagamento,
+centralizado pela posição do morador ou em Itajaí. Desenhar o mapa só com o Flutter
+exigiria baixar e montar os ladrilhos, converter coordenadas em pixels e tratar os
+gestos de arrastar e aproximar.
+**Decisão:** usar o `flutter_map` **8.3.2** (publicado em 27/08/2026, licença
+BSD-3-Clause) com os ladrilhos do OpenStreetMap, e o `latlong2` **0.10.1** (27/04/2026),
+que dá o tipo `LatLng` usado pelo `flutter_map`. Versões exatas, sem `^`, como os
+outros pacotes do Firebase e do GPS; consultadas na API do pub.dev em 15/11/2026.
+- Compatibilidade: o `flutter_map` 8.3.2 pede Dart ≥ 3.6 e Flutter ≥ 3.27 (o projeto
+  usa Dart 3.13 e Flutter 3.47.7 no CI) e aceita `latlong2` de 0.9.1 até antes de
+  0.11.0. Traz pacotes indiretos (`path_provider`, `uuid`, `proj4dart` e outros), que
+  aparecem só no `pubspec.lock`.
+- Ladrilhos: servidor público do OpenStreetMap, sem chave nem conta. A tela mostra a
+  atribuição "© OpenStreetMap" e o app se identifica pelo nome do pacote, como pede a
+  política de uso dos ladrilhos; o uso é pequeno (validação com poucos moradores).
+- Nenhum dado do morador é enviado ao servidor de ladrilhos além do pedido das
+  imagens da região exibida.
+**Por quê:** é o pacote de mapa mais usado no Flutter sem fins comerciais, sem chave
+de API e sem custo, e já estava previsto no plano do RF04. O Google Maps foi
+descartado por exigir chave de API e conta de faturamento; desenhar o mapa à mão, pelo
+prazo de 19/11.
+**Testes:** o `MapaViewModel` (D13, adendo) não depende do `flutter_map`. Nos testes de
+widget, a camada de ladrilhos fica desligada, para nenhum teste acessar a internet; os
+marcadores e o botão "Já baixou" são testados sem rede.
