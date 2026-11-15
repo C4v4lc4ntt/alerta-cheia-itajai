@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/tema/cores.dart';
+import '../../domain/models/altura_agua.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/regras/nome_do_estagio.dart';
 
@@ -53,3 +54,11 @@ DateTime _emBrasilia(DateTime instante) =>
     instante.toUtc().subtract(const Duration(hours: 3));
 
 String _doisDigitos(int numero) => numero.toString().padLeft(2, '0');
+
+/// Texto de cada altura da água (aprovado em 09/11): usado na tela de marcar
+/// (RF03) e no painel do ponto no mapa (RF04, ciclo 6b).
+String rotuloDaAltura(AlturaAgua altura) => switch (altura) {
+  AlturaAgua.canela => 'Canela · até 20 cm',
+  AlturaAgua.joelho => 'Joelho · 20 a 50 cm',
+  AlturaAgua.cintura => 'Cintura · mais de 50 cm',
+};

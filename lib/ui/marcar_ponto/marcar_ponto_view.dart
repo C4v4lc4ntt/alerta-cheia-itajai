@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models/altura_agua.dart';
+import '../comum/formatos.dart';
 import 'bloco_localizacao.dart';
 import 'estado_envio.dart';
 import 'marcar_ponto_view_model.dart';
@@ -111,7 +112,7 @@ class _MarcarPontoViewState extends State<MarcarPontoView> {
       children: [
         for (final altura in AlturaAgua.values)
           ChoiceChip(
-            label: Text(_rotuloDaAltura(altura)),
+            label: Text(rotuloDaAltura(altura)),
             selected: viewModel.altura == altura,
             onSelected: (_) => viewModel.escolherAltura(altura),
           ),
@@ -132,10 +133,3 @@ class _MarcarPontoViewState extends State<MarcarPontoView> {
     EstadoEnvio.nenhum || EstadoEnvio.enviando => const [],
   };
 }
-
-/// Texto de cada opção de altura (aprovado em 09/11).
-String _rotuloDaAltura(AlturaAgua altura) => switch (altura) {
-  AlturaAgua.canela => 'Canela · até 20 cm',
-  AlturaAgua.joelho => 'Joelho · 20 a 50 cm',
-  AlturaAgua.cintura => 'Cintura · mais de 50 cm',
-};
