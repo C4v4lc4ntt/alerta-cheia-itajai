@@ -19,13 +19,23 @@ service cloud.firestore {
         && ponto.criadoEm == request.time;
     }
 
+    // "Já baixou" (RF04, adendo da D18): só o contador muda, e só +1.
+    // O valor antigo vale 0 quando o campo ainda não existe (o ponto é
+    // criado só com os 4 campos da D17). Impede zerar o contador, somar
+    // mais de 1 de uma vez ou mexer na posição, na altura ou na data.
+    function somaUmJaBaixou() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['jaBaixou'])
+        && request.resource.data.jaBaixou == resource.data.get('jaBaixou', 0) + 1;
+    }
+
     // Coleção pontos: leitura pública (o mapa é de todos), criação
-    // só de ponto válido, alterar e apagar bloqueados (o RF04 abrirá
-    // só o contador do "Já baixou").
+    // só de ponto válido, alteração só do "Já baixou" (+1) e apagar
+    // bloqueado.
     match /pontos/{pontoId} {
       allow read: if true;
       allow create: if pontoValido(request.resource.data);
-      allow update, delete: if false;
+      allow update: if somaUmJaBaixou();
+      allow delete: if false;
     }
 
     // Qualquer outra coleção continua fechada (nada liberado = recusado).
