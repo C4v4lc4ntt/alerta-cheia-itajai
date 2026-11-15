@@ -34,6 +34,7 @@ import 'firebase_options.dart';
 import 'tarefa_verificacao.dart';
 import 'ui/ajustes/ajustes_view_model.dart';
 import 'ui/inicio/inicio_view_model.dart';
+import 'ui/mapa/mapa_view_model.dart';
 import 'ui/marcar_ponto/marcar_ponto_view_model.dart';
 
 Future<void> main() async {
@@ -105,6 +106,17 @@ Future<void> main() async {
                 GeolocatorPlatform.instance,
               ),
               pontos: PontosServicoFirestore(FirebaseFirestore.instance),
+              agora: DateTime.now,
+            )
+          : null,
+      // RF04 (ciclo 6c): o mapa da aba ganha um ViewModel a cada abertura,
+      // com o Firestore, o GPS e o relógio de verdade. Sem Firebase, null.
+      criarMapa: firebaseLigado
+          ? () => MapaViewModel(
+              pontos: PontosServicoFirestore(FirebaseFirestore.instance),
+              localizacao: LocalizacaoServicoGeolocator(
+                GeolocatorPlatform.instance,
+              ),
               agora: DateTime.now,
             )
           : null,
