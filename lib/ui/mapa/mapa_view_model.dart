@@ -8,7 +8,9 @@
 // sem lista nova. Ciclo 5b: "Já baixou" uma vez por ponto enquanto o app
 // estiver aberto (adendo da D18). Ciclo 5c: o GPS é lido uma vez, só para
 // centralizar o mapa; sem posição ou fora da área, o mapa abre em Itajaí
-// (D13). A View só desenha o que ele expõe.
+// (D13). Ciclo 6d: depois do dispose (aba fechada), respostas atrasadas do
+// GPS ou do servidor não avisam mais a tela. A View só desenha o que ele
+// expõe.
 // =============================================================================
 import 'dart:async';
 
@@ -116,8 +118,20 @@ class MapaViewModel extends ChangeNotifier {
   /// Spring): o mapa fechado não gasta leituras nem memória.
   @override
   void dispose() {
+    _descartado = true;
     _assinatura?.cancel();
     _revisao?.cancel();
     super.dispose();
+  }
+
+  // Marca que a aba fechou: a partir daí ninguém mais ouve este ViewModel.
+  bool _descartado = false;
+
+  /// Só avisa a tela enquanto o ViewModel está em uso. O GPS (até 30 s) ou a
+  /// recusa do "Já baixou" podem chegar depois de o morador sair da aba, e
+  /// avisar um ViewModel descartado quebraria o app (ciclo 6d).
+  @override
+  void notifyListeners() {
+    if (!_descartado) super.notifyListeners();
   }
 }
