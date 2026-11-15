@@ -4,6 +4,7 @@
 // ETAPA VERDE: código mínimo para os testes passarem.
 // Só os campos da D17: posição, altura e data e hora. Sem foto (D06), sem
 // texto livre e sem identificador do celular ou do morador (LGPD).
+// Ciclo 2 do RF04: contador de "Já baixou" (padrão 0, nunca negativo).
 // =============================================================================
 import 'altura_agua.dart';
 import 'area_retangular.dart';
@@ -15,6 +16,7 @@ class PontoAlagamento {
     required this.longitude,
     required this.altura,
     required this.criadoEm,
+    required this.jaBaixou,
   });
 
   /// Registra um ponto novo.
@@ -29,6 +31,7 @@ class PontoAlagamento {
     required AlturaAgua? altura,
     required AreaRetangular area,
     required DateTime Function() agora,
+    int jaBaixou = 0,
   }) {
     if (latitude == null) {
       throw ArgumentError('A latitude não foi informada.');
@@ -44,11 +47,18 @@ class PontoAlagamento {
         'O ponto ($latitude, $longitude) fica fora da área permitida.',
       );
     }
+    // O contador só cresce a partir de 0; negativo indica dado errado.
+    if (jaBaixou < 0) {
+      throw ArgumentError(
+        'O número de "Já baixou" não pode ser negativo: $jaBaixou.',
+      );
+    }
     return PontoAlagamento._(
       latitude: latitude,
       longitude: longitude,
       altura: altura,
       criadoEm: agora(),
+      jaBaixou: jaBaixou,
     );
   }
 
@@ -59,4 +69,7 @@ class PontoAlagamento {
   /// Momento do registro no celular. No Firestore vale o horário do servidor
   /// (D17); isso é tratado no ciclo 16.
   final DateTime criadoEm;
+
+  /// Quantos moradores tocaram em "Já baixou" neste ponto (RF04).
+  final int jaBaixou;
 }
