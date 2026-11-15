@@ -1,7 +1,8 @@
 // =============================================================================
 // mapa_view_model_test.dart — RF04 (D06 e adendos da D06 e da D18): o estado
 // da aba Mapa. Ciclo 5a: só os pontos ativos; ciclo 5b: "Já baixou" uma vez
-// por ponto; ciclo 5c: centro do mapa (D13).
+// por ponto; ciclo 5c: centro do mapa (D13); ciclo 6d: nada quebra quando
+// uma resposta chega depois de o ViewModel ser descartado (aba fechada).
 //
 // Escrito ANTES do código (etapa vermelha do TDD). Usa o serviço falso de
 // pontos, que manda listas como o Firestore, e um relógio controlado pelo
@@ -201,6 +202,34 @@ void main() {
       await viewModel.buscarCentro();
 
       expect(viewModel.centro, centroItajai);
+    });
+  });
+
+  // RF04 (ciclo 6d): o morador pode sair da aba antes de o GPS responder
+  // (até 30 s) ou antes de o servidor recusar o "Já baixou". A resposta que
+  // chega depois do dispose não pode quebrar o app.
+  group('resposta depois de sair da aba', () {
+    test('descartado antes de o GPS responder → não quebra', () async {
+      // Arrange: a busca começa e a aba fecha antes da resposta.
+      final busca = viewModel.buscarCentro();
+
+      // Act
+      viewModel.dispose();
+
+      // Assert: a busca termina sem erro.
+      await expectLater(busca, completes);
+    });
+
+    test('descartado antes da recusa do "Já baixou" → não quebra', () async {
+      // Arrange: o servidor vai recusar o +1.
+      pontos.deveFalhar = true;
+      final envio = viewModel.confirmarJaBaixou('abc123');
+
+      // Act: a aba fecha antes da recusa chegar.
+      viewModel.dispose();
+
+      // Assert
+      await expectLater(envio, completes);
     });
   });
 }
