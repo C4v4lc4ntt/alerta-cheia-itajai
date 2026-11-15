@@ -403,6 +403,11 @@ no documento certo. As regras são testadas no Rules Playground (+1 aceito, +2
 recusado, mudar a altura recusado, apagar recusado), porque o `fake_cloud_firestore`
 não executa regras (adendo da D17).
 
+**Adendo (15/11/2026), Firebase desligado no RF04:** com o Firebase desligado, a aba
+Mapa continua como no RF03: sem mapa, com o botão "Marcar rua alagada" desativado e o
+aviso. Um mapa vazio pareceria "nenhuma rua alagada". Já implementado no ciclo 23 do
+RF03 e mantido nos ciclos 6a a 6d do RF04 (`criarMapa` nulo).
+
 ## D19 · Pacotes flutter_map e latlong2 para o mapa (15/11/2026)
 **Contexto:** o RF04 e a D13 pedem um mapa de ruas com os pontos de alagamento,
 centralizado pela posição do morador ou em Itajaí. Desenhar o mapa só com o Flutter
@@ -428,3 +433,59 @@ prazo de 19/11.
 **Testes:** o `MapaViewModel` (D13, adendo) não depende do `flutter_map`. Nos testes de
 widget, a camada de ladrilhos fica desligada, para nenhum teste acessar a internet; os
 marcadores e o botão "Já baixou" são testados sem rede.
+
+## D20 · RF05 e RF06: fontes, abrigos e ligação por um toque (15/11/2026)
+**Contexto:** o RF05 pede abrigos e contatos de emergência com ligação por um toque,
+e o RF06 pede orientações (com veículos e ruas alagadas) e o aviso de "enchente sem
+chuva". O CLAUDE.md proíbe inventar dados de domínio, e o Flutter puro não abre o
+discador do celular.
+**Decisão:**
+- **Pacote:** `url_launcher` **6.3.3** (publicado em 02/10/2026; pede Dart ≥ 3.11 e
+  Flutter ≥ 3.41), versão exata, consultada na API do pub.dev em 15/11/2026. Abre o
+  discador com o número já digitado (`tel:`) e o navegador (`https:`); o app não liga
+  sozinho e não pede a permissão `CALL_PHONE`. Usa só `launchUrl`; se falhar, a tela
+  mostra o número para discar à mão. Entradas `tel` e `https` no `<queries>` do
+  `AndroidManifest.xml`. Fica atrás de uma interface em `data/servicos`, com versão
+  falsa nos testes.
+- **Contatos (RF05):** 199 (Defesa Civil: riscos, alagamentos, deslizamentos e
+  emergências do município), 193 (Corpo de Bombeiros: incêndios, salvamentos,
+  acidentes e risco à vida) e 192 (SAMU: urgências e emergências médicas). Fonte:
+  página "Telefones de emergência" do portal da Defesa Civil de Itajaí, acesso em
+  15/11/2026.
+- **Abrigos (RF05):** fonte é a camada `abrigos_itajai_final_2026` do geoportal da
+  Prefeitura (painel público "Abrigos de Itajaí", dono `geoportal`, alterado em
+  11/11/2026, ligado no item "Situação dos abrigos" do portal), lida em 15/11/2026.
+  De 37 registros, entram 34: 32 abrigos de pessoas, agrupados pela região (CRAS) e
+  na ordem de prioridade de abertura da fonte, e 2 abrigos de animais, numa seção
+  própria. Saem os 3 registros com códigos (x1 AA, x2 E, x3 CA) no endereço da
+  Defesa Civil, que não são abrigos. Cada abrigo mostra nome, endereço, região e
+  telefone quando houver; capacidade e coordenadas ficam de fora. Correções de
+  digitação: "Cordieros" → "Cordeiros", "Alferedo" → "Alfredo", "fazenda" →
+  "Fazenda". Os telefones dos abrigos também ligam por um toque; quando a fonte não
+  traz o DDD, o catálogo acrescenta o 47.
+- **Abrigos abertos:** a camada não diz quais estão abertos (o campo de situação traz
+  só a lista de opções). A tela avisa que os abrigos abrem conforme a necessidade e
+  que é preciso confirmar pelo 199, como orienta a Defesa Civil.
+- **Orientações (RF06):** Antes, Durante e Depois da página "Como agir em enchentes"
+  do portal da Defesa Civil de Itajaí (acesso em 15/11/2026). Veículos e ruas
+  alagadas: Cartilha de Prevenção do gov.br (Ministério das Cidades, acesso em
+  15/11/2026), porque a página de Itajaí não trata do assunto. Botão "Ver as vias com
+  risco de alagar no mapa da Defesa Civil", que abre a página "Projeção de Vias
+  Inundáveis" do portal. É uma projeção ao vivo (7.212 vias, nenhuma marcada em
+  15/11/2026), por isso o app aponta para ela e não copia os dados.
+- **"Enchente sem chuva" (RF06):** o aviso fica sempre visível na aba Ajuda e em
+  destaque quando o estágio em destaque da cidade (D16) for Atenção ou mais grave.
+  Regra pura em `domain/regras`. Fonte: NSC Total, "Fenômeno da 'enchente sem chuva'
+  é ameaça em Itajaí" (2023), já citada no relatório da Etapa 1.
+- **Firebase desligado no RF04:** registrado como adendo da D18.
+**Descartadas:** código nativo em Kotlin e Swift (platform channel) para abrir o
+discador; só mostrar os números, sem toque (não atende o RF05); o PDF do Plano de
+Contingência (link fora do ar no portal novo); a cartilha de janeiro de 2011
+(desatualizada); copiar as vias inundáveis para o app (lista vazia fora de evento e
+desatualizada na cheia seguinte).
+**Por quê:** os dados vêm de fontes oficiais com data, o app não se apresenta como
+fonte da situação dos abrigos e o caminho para o 199, o 193 e o 192 fica a um toque.
+**Testes:** catálogos com os valores da fonte (quantidade, números sem repetição,
+números só com dígitos); discador falso nos testes do ViewModel e da tela; valores-
+limite da regra do aviso (Monitoramento → sem destaque; Atenção, Alerta e
+Emergência → em destaque).
