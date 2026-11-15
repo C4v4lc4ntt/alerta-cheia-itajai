@@ -1,7 +1,7 @@
 // =============================================================================
 // pontos_servico_firestore_test.dart — RF03 (D17) e RF04: envio do ponto de
 // alagamento para a coleção "pontos" do Cloud Firestore e leitura em tempo
-// real dos pontos das últimas 6 h (ciclo 3b).
+// real dos pontos das últimas 6 h (ciclo 3b), com o ID do documento (4a).
 //
 // Escrito ANTES do código (etapa vermelha do TDD).
 // Sem rede: o FakeFirebaseFirestore guarda tudo em memória (como o H2 num
@@ -144,6 +144,21 @@ void main() {
       }
 
       expect(tamanhos, [0, 1]);
+    });
+
+    // RF04 (ciclo 4a): o botão "Já baixou" precisa saber qual documento
+    // atualizar.
+    test('cada ponto vem com o id do seu documento', () async {
+      // Arrange: o add devolve a referência, com o ID gerado pelo Firestore.
+      final referencia = await firestore
+          .collection('pontos')
+          .add(documento(criadoHa: const Duration(hours: 1)));
+
+      // Act
+      final pontos = await servico.acompanharPontos(agora: agora).first;
+
+      // Assert
+      expect(pontos.single.id, referencia.id);
     });
   });
 }

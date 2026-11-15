@@ -1,5 +1,6 @@
 // =============================================================================
 // ponto_alagamento_test.dart — RF03 (D17): registro de um ponto de alagamento.
+// RF04: contador "Já baixou" (ciclo 2) e ID do documento (ciclo 4a).
 //
 // Escrito ANTES do código (etapa vermelha do TDD).
 // Teste planejado na Etapa 1 (Tabela 5): registro sem localização ou sem
@@ -117,6 +118,33 @@ void main() {
         ),
         throwsArgumentError,
       );
+    });
+
+    // RF04 (adendo da D18): o ID do documento do Firestore, como o @Id de
+    // uma entidade JPA. O ponto recém-marcado ainda não foi gravado.
+    test('ponto recém-marcado → sem id', () {
+      final ponto = PontoAlagamento.registrar(
+        latitude: latitudeValida,
+        longitude: longitudeValida,
+        altura: AlturaAgua.joelho,
+        area: areaItajai,
+        agora: relogio,
+      );
+
+      expect(ponto.id, isNull);
+    });
+
+    test('ponto com o id do documento → guarda o id', () {
+      final ponto = PontoAlagamento.registrar(
+        latitude: latitudeValida,
+        longitude: longitudeValida,
+        altura: AlturaAgua.joelho,
+        area: areaItajai,
+        agora: relogio,
+        id: 'abc123',
+      );
+
+      expect(ponto.id, 'abc123');
     });
   });
 }

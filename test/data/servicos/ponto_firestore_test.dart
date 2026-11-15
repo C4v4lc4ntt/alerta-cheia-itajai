@@ -1,6 +1,7 @@
 // =============================================================================
 // ponto_firestore_test.dart — RF03 (D17) e RF04 (adendo da D18): conversão
-// do ponto de alagamento para o documento do Firestore e de volta.
+// do ponto de alagamento para o documento do Firestore e de volta, com o ID
+// do documento (ciclo 4a).
 //
 // Escrito ANTES do código (etapa vermelha do TDD).
 // Sem rede e sem iniciar o Firebase: FieldValue e Timestamp são objetos comuns.
@@ -138,6 +139,18 @@ void main() {
           isNull,
         );
       });
+    });
+
+    // RF04 (ciclo 4a): o ID não está nos dados do documento, por isso
+    // chega num parâmetro à parte.
+    test('documento com id → ponto com o mesmo id', () {
+      final ponto = pontoDoFirestore(
+        documento(),
+        area: areaItajai,
+        id: 'abc123',
+      );
+
+      expect(ponto!.id, 'abc123');
     });
   });
 }
