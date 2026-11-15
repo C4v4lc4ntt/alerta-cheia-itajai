@@ -347,3 +347,33 @@ representar sozinho o que está no mapa.
 **Testes:** valor-limite em volta de 3, uma hora depois da criação (longe das 6 h):
 2 → ativo, 3 → inativo, 4 → inativo. Sem informar o contador, `jaBaixou` = 0.
 `jaBaixou: -1` → `ArgumentError`.
+
+**Adendo (15/11/2026), leitura e "Já baixou" no Firestore (RF04):**
+- **Leitura em tempo real:** `PontosServico.acompanharPontos(agora:)` devolve um
+  `Stream` com os `snapshots()` da coleção, e o mapa se atualiza quando outro morador
+  marca um ponto. A consulta busca só os pontos com `criadoEm > agora − 6 h`
+  (com exatamente 6 h o ponto já sai, adendo da D06), porque apagar é bloqueado e a
+  coleção só cresce. O corte pelos 3 "Já baixou" e o passar das horas com o mapa
+  aberto ficam com a regra `pontoAtivo`.
+- **ID do ponto:** campo opcional `String? id` no `PontoAlagamento` (como o `@Id` de
+  uma entidade JPA): `null` no ponto recém-marcado, preenchido com o ID do documento
+  na leitura. O envio do "Já baixou" é `PontosServico.confirmarJaBaixou(id)`, com
+  `FieldValue.increment(1)` (campo ausente conta como 0).
+- **Uma confirmação por ponto:** o ViewModel do mapa guarda em memória os IDs já
+  confirmados por este celular, e o botão daquele ponto fica desativado com "Você já
+  avisou". Nada é gravado em disco nem enviado sobre a pessoa (LGPD).
+- **Regras do Firestore:** `update` só se o único campo alterado for o `jaBaixou` e o
+  novo valor for o antigo + 1 (antigo ausente = 0); `delete` continua bloqueado.
+
+**Descartadas:** leitura única (`Future`), que exigiria reabrir a aba; ler a coleção
+inteira; um tipo `PontoNoMapa(id, ponto)` separado (mudaria o `Stream` já testado);
+toque sem controle (um toque duplo já contaria 2); guardar as confirmações no
+celular (mais um ciclo, com o prazo de 19/11); limitar o +1 às 6 h e a 3 nas regras
+(um +1 num ponto vencido não aparece no mapa).
+**Limitação:** sem login, nada impede quem fecha e abre o app (ou reinstala) de
+confirmar de novo; o controle evita só o toque repetido sem querer.
+**Testes:** leitura com `FakeFirebaseFirestore` (valores-limite em volta das 6 h,
+documento inválido de fora, segunda lista em tempo real); `confirmarJaBaixou` soma 1
+no documento certo. As regras são testadas no Rules Playground (+1 aceito, +2
+recusado, mudar a altura recusado, apagar recusado), porque o `fake_cloud_firestore`
+não executa regras (adendo da D17).
