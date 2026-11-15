@@ -2,6 +2,7 @@
 // pontos_servico_firestore_test.dart — RF03 (D17) e RF04: envio do ponto de
 // alagamento para a coleção "pontos" do Cloud Firestore e leitura em tempo
 // real dos pontos das últimas 6 h (ciclo 3b), com o ID do documento (4a).
+// Ciclo 4b: o "Já baixou" soma 1 no documento certo.
 //
 // Escrito ANTES do código (etapa vermelha do TDD).
 // Sem rede: o FakeFirebaseFirestore guarda tudo em memória (como o H2 num
@@ -159,6 +160,58 @@ void main() {
 
       // Assert
       expect(pontos.single.id, referencia.id);
+    });
+  });
+
+  // RF04 (ciclo 4b): o botão "Já baixou" soma 1 no documento do ponto, com
+  // FieldValue.increment (o servidor soma, sem ler antes).
+  group('confirmarJaBaixou', () {
+    // Documento como o RF03 grava: só os 4 campos da D17, sem o contador.
+    Map<String, Object> documento() => {
+      'latitude': latitude,
+      'longitude': longitude,
+      'altura': 'joelho',
+      'criadoEm': Timestamp.fromDate(horaDoServidor),
+    };
+
+    // Lê o campo jaBaixou do documento com o [id] (null se não existir).
+    Future<Object?> jaBaixouDe(String id) async {
+      final lido = await firestore.collection('pontos').doc(id).get();
+      return lido.data()?['jaBaixou'];
+    }
+
+    test('documento sem o campo → jaBaixou 1', () async {
+      // Arrange
+      final referencia = await firestore.collection('pontos').add(documento());
+
+      // Act
+      await servico.confirmarJaBaixou(referencia.id);
+
+      // Assert: o campo ausente conta como 0.
+      expect(await jaBaixouDe(referencia.id), 1);
+    });
+
+    test('documento com jaBaixou 2 → 3', () async {
+      final referencia = await firestore.collection('pontos').add({
+        ...documento(),
+        'jaBaixou': 2,
+      });
+
+      await servico.confirmarJaBaixou(referencia.id);
+
+      expect(await jaBaixouDe(referencia.id), 3);
+    });
+
+    test('o outro ponto da coleção não muda', () async {
+      // Arrange: dois pontos; só o primeiro recebe o "Já baixou".
+      final confirmado = await firestore.collection('pontos').add(documento());
+      final outro = await firestore.collection('pontos').add(documento());
+
+      // Act
+      await servico.confirmarJaBaixou(confirmado.id);
+
+      // Assert
+      expect(await jaBaixouDe(outro.id), isNull);
     });
   });
 }
