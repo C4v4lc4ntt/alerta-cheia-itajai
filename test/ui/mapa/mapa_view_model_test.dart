@@ -1,7 +1,7 @@
 // =============================================================================
 // mapa_view_model_test.dart — RF04 (D06 e adendos da D06 e da D18): o estado
 // da aba Mapa. Ciclo 5a: só os pontos ativos; ciclo 5b: "Já baixou" uma vez
-// por ponto.
+// por ponto; ciclo 5c: centro do mapa (D13).
 //
 // Escrito ANTES do código (etapa vermelha do TDD). Usa o serviço falso de
 // pontos, que manda listas como o Firestore, e um relógio controlado pelo
@@ -13,10 +13,12 @@ import 'dart:async';
 
 import 'package:alerta_cheia_itajai/data/catalogo/area_itajai.dart';
 import 'package:alerta_cheia_itajai/domain/models/altura_agua.dart';
+import 'package:alerta_cheia_itajai/domain/models/leitura_localizacao.dart';
 import 'package:alerta_cheia_itajai/domain/models/ponto_alagamento.dart';
 import 'package:alerta_cheia_itajai/ui/mapa/mapa_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../apoio/localizacao_servico_falso.dart';
 import '../../apoio/pontos_servico_falso.dart';
 
 // Centro do retângulo de Itajaí: com certeza dentro da área.
@@ -29,12 +31,18 @@ void main() {
   final abertura = DateTime.utc(2026, 11, 15, 14, 0);
   late DateTime agora;
   late PontosServicoFalso pontos;
+  late LocalizacaoServicoFalso localizacao;
   late MapaViewModel viewModel;
 
   setUp(() {
     agora = abertura;
     pontos = PontosServicoFalso();
-    viewModel = MapaViewModel(pontos: pontos, agora: () => agora);
+    localizacao = LocalizacaoServicoFalso(resposta: const PermissaoNegada());
+    viewModel = MapaViewModel(
+      pontos: pontos,
+      localizacao: localizacao,
+      agora: () => agora,
+    );
   });
 
   // Ponto criado [criadoHa] antes da abertura do mapa.
@@ -141,6 +149,58 @@ void main() {
       await viewModel.confirmarJaBaixou('abc123');
 
       expect(viewModel.podeConfirmar('abc123'), isTrue);
+    });
+  });
+
+  // RF04 (D13, ciclo 5c): o GPS é lido uma vez, só para centralizar; a
+  // posição não é guardada nem enviada (LGPD). Sem posição, ou com a posição
+  // fora da área, o mapa abre em Itajaí.
+  group('centro do mapa (D13)', () {
+    test('antes da leitura → sem centro (mapa ainda buscando)', () {
+      expect(viewModel.centro, isNull);
+    });
+
+    test('posição lida dentro de Itajaí → centraliza nela', () async {
+      localizacao.resposta = LocalizacaoObtida(
+        latitude: _latitude,
+        longitude: _longitude,
+        precisaoMetros: 12,
+      );
+
+      await viewModel.buscarCentro();
+
+      expect(viewModel.centro, (latitude: _latitude, longitude: _longitude));
+    });
+
+    final semPosicao = <String, LeituraLocalizacao>{
+      'GPS desligado → centraliza em Itajaí': const GpsDesligado(),
+      'permissão negada → centraliza em Itajaí': const PermissaoNegada(),
+      'permissão bloqueada → centraliza em Itajaí': const PermissaoBloqueada(),
+      'falha na leitura → centraliza em Itajaí': const FalhaNaLeitura(),
+    };
+
+    semPosicao.forEach((nome, leitura) {
+      test(nome, () async {
+        localizacao.resposta = leitura;
+
+        await viewModel.buscarCentro();
+
+        expect(viewModel.centro, centroItajai);
+      });
+    });
+
+    // Um pouco ao norte da latitude máxima: fora da área (morador em outra
+    // cidade). O mapa só tem pontos dentro de Itajaí.
+    test('posição lida fora da área → centraliza em Itajaí', () async {
+      localizacao.resposta = LocalizacaoObtida(
+        latitude: areaItajai.latitudeMaxima + 0.01,
+        longitude: _longitude,
+        precisaoMetros: 12,
+      );
+
+      await viewModel.buscarCentro();
+
+      expect(viewModel.centro, centroItajai);
     });
   });
 }
