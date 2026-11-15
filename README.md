@@ -19,7 +19,7 @@ Em Itajaí a informação sobre cheias está espalhada: o SMS 40199 e o cell bro
 | RF01 | Estágio de alerta, nível das 11 estações, boletim oficial e tábua de marés, com horário da medição | ✅ Concluído |
 | RF02 | Escolha de bairros, notificação quando o estágio **muda** (também com o app fechado, no Android) e situação oficial da Defesa Civil em destaque | ✅ Concluído |
 | RF03 | Marcar ponto de alagamento (local pelo GPS e altura da água), sem login nem identificação | ✅ Concluído |
-| RF04 | Mapa dos pontos ativos (somem 6 h após a criação ou com 3 "já baixou") | 🔜 Sprint 3 |
+| RF04 | Mapa dos pontos ativos em tempo real, centralizado pelo GPS ou em Itajaí (somem 6 h após a criação ou com 3 "já baixou") | ✅ Concluído |
 | RF05 | Abrigos e contatos de emergência com ligação em um toque | 🔜 Sprint 4 |
 | RF06 | Orientações antes/durante/depois e aviso de "enchente sem chuva" | 🔜 Sprint 4 |
 
