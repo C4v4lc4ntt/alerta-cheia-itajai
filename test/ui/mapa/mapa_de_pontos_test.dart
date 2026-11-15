@@ -1,6 +1,7 @@
 // =============================================================================
 // mapa_de_pontos_test.dart — RF04 (D13 e D19, ciclo 6a): o mapa com um
-// marcador por ponto ativo.
+// marcador por ponto ativo. Ciclo 6b: o "Já baixou" no marcador (adendos
+// da D18 e da D13).
 //
 // Escrito ANTES do código (etapa vermelha do TDD). Usa os serviços falsos de
 // pontos e de localização e o MapaViewModel de verdade. Os ladrilhos ficam
@@ -120,5 +121,79 @@ void main() {
 
     expect(find.textContaining('OpenStreetMap'), findsOneWidget);
     await encerrar(tester);
+  });
+
+  // RF04 (ciclo 6b): tocar no marcador abre um painel com a altura, a hora da
+  // marcação e o botão "Já baixou" (uma vez por ponto, adendo da D18).
+  group('"Já baixou" no marcador', () {
+    // Mapa aberto com o ponto 'a', marcado 1 h antes (13:00 UTC = 10:00 em
+    // Brasília), com a água no joelho.
+    Future<void> abrirComUmPonto(WidgetTester tester) async {
+      await viewModel.buscarCentro();
+      viewModel.iniciar();
+      pontos.listas.add([ponto(id: 'a', criadoHa: const Duration(hours: 1))]);
+      await montar(tester);
+      await tester.pump();
+    }
+
+    // Acessibilidade (CLAUDE.md): o leitor de tela diz o que é o marcador.
+    testWidgets('o marcador tem rótulo para leitor de tela', (tester) async {
+      await abrirComUmPonto(tester);
+
+      expect(
+        find.bySemanticsLabel('Ponto de alagamento: Joelho · 20 a 50 cm'),
+        findsOneWidget,
+      );
+      await encerrar(tester);
+    });
+
+    testWidgets('tocar no marcador → painel com a altura e a hora', (
+      tester,
+    ) async {
+      await abrirComUmPonto(tester);
+
+      // Act
+      await tester.tap(find.byKey(const ValueKey('marcador_a')));
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(find.text('Joelho · 20 a 50 cm'), findsOneWidget);
+      expect(find.text('Marcado às 10:00'), findsOneWidget);
+      await encerrar(tester);
+    });
+
+    testWidgets('tocar em "Já baixou" → envia o +1 daquele ponto', (
+      tester,
+    ) async {
+      await abrirComUmPonto(tester);
+      await tester.tap(find.byKey(const ValueKey('marcador_a')));
+      await tester.pumpAndSettle();
+
+      // Act
+      await tester.tap(find.text('Já baixou'));
+      await tester.pump();
+
+      // Assert
+      expect(pontos.confirmados, ['a']);
+      await encerrar(tester);
+    });
+
+    testWidgets('depois do toque → "Você já avisou", desativado', (
+      tester,
+    ) async {
+      await abrirComUmPonto(tester);
+      await tester.tap(find.byKey(const ValueKey('marcador_a')));
+      await tester.pumpAndSettle();
+
+      // Act
+      await tester.tap(find.text('Já baixou'));
+      await tester.pump();
+
+      // Assert: o botão muda de texto e fica desativado (onPressed nulo).
+      final botao = find.widgetWithText(FilledButton, 'Você já avisou');
+      expect(botao, findsOneWidget);
+      expect(tester.widget<FilledButton>(botao).onPressed, isNull);
+      await encerrar(tester);
+    });
   });
 }
