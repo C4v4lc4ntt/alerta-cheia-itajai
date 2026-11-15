@@ -61,6 +61,18 @@ jobs:
       - name: Verificar formatação
         run: dart format --output=none --set-exit-if-changed .
 
+      # 5b) Recria os arquivos do Firebase, que ficam fora do Git (.gitignore), a partir
+      # dos GitHub Secrets (texto em base64). Se um Secret faltar, para com erro claro.
+      - name: Recriar a configuração do Firebase
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: |
+          test -n "$GOOGLE_SERVICES_JSON" || { echo "::error::Secret GOOGLE_SERVICES_JSON não configurado"; exit 1; }
+          test -n "$FIREBASE_OPTIONS_DART" || { echo "::error::Secret FIREBASE_OPTIONS_DART não configurado"; exit 1; }
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
+
       # 6) Análise estática (lint): pega erros e más práticas sem executar o app.
       - name: Análise estática
         run: flutter analyze
@@ -77,7 +89,8 @@ jobs:
           path: coverage/lcov.info
 
       # 9) Exige no mínimo 80% de cobertura na LÓGICA (lib/domain e lib/data).
-      #    Telas, tema e main ficam fora da conta (são cobertos por testes de widget).
+      #    Telas, tema, main e o firebase_options.dart (gerado pelo FlutterFire)
+      #    ficam fora da conta (as telas são cobertas por testes de widget).
       #    A conta é feita aqui mesmo, a partir do coverage/lcov.info, sem action de
       #    terceiros (a very_good_coverage foi arquivada em 31/03/2026).
       #    No lcov.info: "SF:" = arquivo, "LF:" = linhas, "LH:" = linhas testadas.
@@ -85,7 +98,7 @@ jobs:
         run: |
           awk -v minimo=80 '
             /^SF:/ { arquivo = substr($0, 4)
-                     ignorar = (arquivo ~ /^lib\/(main|app)\.dart$/ || arquivo ~ /^lib\/(core|ui)\//) }
+                     ignorar = (arquivo ~ /^lib\/(main|app|firebase_options)\.dart$/ || arquivo ~ /^lib\/(core|ui)\//) }
             /^LF:/ && !ignorar { total += substr($0, 4) }
             /^LH:/ && !ignorar { cobertas += substr($0, 4) }
             END {
@@ -106,6 +119,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+      # Recria os arquivos do Firebase, que ficam fora do Git (.gitignore), a partir
+      # dos GitHub Secrets (texto em base64). Se um Secret faltar, para com erro claro.
+      - name: Recriar a configuração do Firebase
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: |
+          test -n "$GOOGLE_SERVICES_JSON" || { echo "::error::Secret GOOGLE_SERVICES_JSON não configurado"; exit 1; }
+          test -n "$FIREBASE_OPTIONS_DART" || { echo "::error::Secret FIREBASE_OPTIONS_DART não configurado"; exit 1; }
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
       - uses: actions/setup-java@v6       # o build Android precisa do Java
         with:
           distribution: temurin
@@ -132,6 +156,17 @@ jobs:
     runs-on: macos-26   # versão fixa, a mesma em que o CI passou em 19/10/2026
     steps:
       - uses: actions/checkout@v7
+      # Recria os arquivos do Firebase, que ficam fora do Git (.gitignore), a partir
+      # dos GitHub Secrets (texto em base64). Se um Secret faltar, para com erro claro.
+      - name: Recriar a configuração do Firebase
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: |
+          test -n "$GOOGLE_SERVICES_JSON" || { echo "::error::Secret GOOGLE_SERVICES_JSON não configurado"; exit 1; }
+          test -n "$FIREBASE_OPTIONS_DART" || { echo "::error::Secret FIREBASE_OPTIONS_DART não configurado"; exit 1; }
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
       - uses: subosito/flutter-action@v2
         with:
           channel: stable

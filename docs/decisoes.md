@@ -227,3 +227,105 @@ cartões.
 RF02 até 10/11, RF03 até 15/11, RF04 até 19/11, RF05 e RF06 até 20/11, APK congelado
 em 21/11, validação de 22 a 25/11, relatório até 28/11 e entrega em 29/11, com 30/11
 de reserva. A tela da estação com gráfico foi cortada.
+
+## D17 · Registro de ponto de alagamento sem login (09/11/2026)
+**Contexto:** o RF03 grava os pontos no Cloud Firestore. O app não tem login (LGPD,
+CLAUDE.md seção 7) e a configuração do Firebase vai dentro do APK, então as regras do
+Firestore são a única validação do lado do servidor. A D13 previa o `geolocator` só no RF04.
+**Decisão:**
+- **Campos do ponto:** `latitude`, `longitude`, `altura` (canela, joelho ou cintura) e
+  `criadoEm`. Sem foto (D06), sem texto livre e sem nenhum identificador do celular
+  ou do morador, para que dois pontos não possam ser ligados à mesma pessoa.
+- **Localização:** GPS uma vez, ao abrir a tela de marcar, com a precisão mostrada na tela.
+  Sem permissão ou com falha no GPS, o envio fica bloqueado e a tela explica como ativar.
+  A posição só é gravada como parte do ponto enviado. O `geolocator` entra agora, e a D13
+  continua valendo para o mapa.
+- **Área:** retângulo do município de Itajaí no OpenStreetMap (relation 296666, consulta de
+  09/11/2026): latitude de −27,0960000 a −26,8378087 e longitude de −48,8690000 a
+  −48,6213454, com a borda contando como dentro. Conferido no domínio e nas regras.
+- **Regras do Firestore:** leitura liberada (o mapa é público); criação só com os 4 campos,
+  altura válida, posição dentro da área e `criadoEm` igual ao horário do servidor
+  (`request.time`); alterar e apagar bloqueados (o RF04 abre só o contador do "Já baixou").
+  O `firestore.rules` fica no repositório.
+- **Pacotes:** `cloud_firestore` 7.1.0 (gravar e ler os pontos) e `geolocator` 14.1.2
+  (posição), e `fake_cloud_firestore` 4.5.0 só em `dev_dependencies`, para testar a
+  gravação sem rede. Versões exatas, sem `^`.
+- **Entrada:** botão "Marcar rua alagada" na aba Mapa.
+
+**Por quê:** é a proteção possível sem login e sem custo, e cabe no prazo do RF03 (15/11).
+O horário do servidor impede datas falsas que driblariam a expiração de 6 h do RF04.
+**Limitações:** não há limite de envios por pessoa; o retângulo inclui partes de Navegantes,
+de Balneário Camboriú e do mar. O App Check fica como trabalho futuro (exige conta da Apple
+no iOS).
+**Testes (RF03):** registro sem localização ou sem altura é rejeitado; registro válido guarda
+a data e a hora; em cada lado da área, um ponto 0,0000001° para dentro e um na borda são
+aceitos, e um 0,0000001° para fora é rejeitado; as regras recusam campo a mais, altura
+inventada, ponto fora da área e data diferente da do servidor.
+**Adendo (11/11/2026), regras do Firestore:**
+- As regras usam `is number` para latitude e longitude: aceita o `double` do Dart e
+  não recusa uma coordenada inteira. A área é repetida no `firestore.rules`, porque
+  as regras não importam o catálogo do Dart; os números são os mesmos desta decisão e
+  do `area_itajai.dart`.
+- **Como as regras são testadas:** o Laboratório de testes de regras do Console não
+  simula o `serverTimestamp()`. Os casos inválidos são testados no laboratório (o
+  painel "Informações detalhadas" mostra a condição onde a avaliação parou) e o caso
+  válido, pelo envio real no celular. Descartado por ora: o emulador do Firestore com
+  `@firebase/rules-unit-testing` (projeto Node, Java, job novo no CI e dependência
+  nova; cerca de 1 dia, com o prazo do RF03 em 15/11). Fica como trabalho futuro.
+- **Publicação:** pelo Console, colando o `firestore.rules`, e não pelo `firebase
+  deploy`, porque o `firebase.json` fica só no PC. Depois de publicar, conferir que o
+  publicado é idêntico ao arquivo.
+- Os pontos de teste são apagados pelo Console (acesso de administrador, que não passa
+  pelas regras), porque a leitura é pública e eles têm a posição real de quem testou.
+
+## D18 · Detalhes de implementação do RF03 (09/11 e 10/11/2026)
+**Contexto:** a D17 definiu o que o ponto guarda e como o servidor o valida. Durante
+os ciclos 14 a 23 surgiram escolhas de código e de tela que ela não cobria.
+**Decisão:**
+- **Camadas:** `PontoAlagamento` só é criado por `PontoAlagamento.registrar(latitude,
+  longitude, altura, area, agora)`, com construtor privado. A conversão para o
+  Firestore fica em `data/`, porque usa `FieldValue.serverTimestamp()` e `Timestamp`
+  (as regras exigem `criadoEm == request.time`); o `domain/` continua Dart puro. Na
+  leitura, documento inválido é ignorado (`pontoDoFirestore` devolve `null`) e o
+  horário do servidor é convertido para UTC.
+- **Serviço:** o `PontosServico` só tem `enviar`; a leitura fica para o RF04.
+- **Localização:** 4 casos sem posição (`GpsDesligado`, `PermissaoNegada`,
+  `PermissaoBloqueada`, `FalhaNaLeitura`) e `LocalizacaoObtida(latitude, longitude,
+  precisaoMetros)`. A permissão é pedida uma vez, só se ainda não foi dada. Tempo
+  limite do GPS: 30 s; esgotado, vira `FalhaNaLeitura`. Posição fora da área de
+  Itajaí é um estado próprio (`foraDaArea`), com o envio desativado. A precisão
+  aparece arredondada para metros inteiros (12,4 m → "precisão de 12 m").
+- **Botões da localização:** "Ligar a localização" → `ligarLocalizacao()`; "Abrir
+  configurações" → `abrirConfiguracoes()`; "Permitir localização" e "Tentar de novo"
+  → `buscarLocalizacao()`. Ao voltar ao app (das configurações), a tela busca a
+  localização de novo (`AppLifecycleListener`).
+- **Envio:** tempo limite de 15 s, no ViewModel. O botão "Enviar para o mapa" fica
+  desativado durante o envio, com o texto "Enviando…", e depois do envio, para não
+  duplicar; com erro, volta a funcionar.
+- **Firebase desligado:** o botão "Marcar rua alagada" aparece desativado, com a linha
+  "Não foi possível ligar o envio de marcações. Feche e abra o app de novo.", e a
+  tela de marcar não abre.
+- **Aba Mapa:** a `MapaView` recebe uma função opcional que cria o
+  `MarcarPontoViewModel` (nula = Firebase desligado), e cada abertura da tela cria um
+  ViewModel novo. Enquanto o RF04 não existe, o botão fica abaixo do texto
+  provisório, num `Scaffold` próprio da `MapaView`.
+- **Ciclos:** o antigo ciclo 21 foi dividido em 21 (tempo limite), 22a e 22b (tela) e
+  23 (aba Mapa e `main.dart`), um comportamento por ciclo.
+
+**Descartadas:** esconder o botão ou abrir a tela e cair no erro (Firebase desligado);
+não buscar a localização ao voltar ao app; indicador girando ou só desativar o botão
+durante o envio; `bool firebaseLigado` junto com a função (podem se contradizer); um
+ViewModel único criado no `main.dart` (guardaria o "enviado" e o botão ficaria
+desativado ao reabrir); parâmetro novo na `TelaEmConstrucao` (YAGNI, widget
+compartilhado com a Ajuda); botão flutuante (no Material 3 não fica apagado quando
+desativado).
+**Por quê:** cada estado da tela tem uma saída clara para o morador, e o domínio
+continua testável sem o Firebase.
+**Limitação:** se o envio estoura os 15 s, a gravação continua na fila do Firestore e
+pode chegar depois; reenviar pode duplicar a marcação, que some em 6 h ou com 3 "Já
+baixou" (RF04).
+**Testes:** os do Firestore usam `FakeFirebaseFirestore(clock: Clock.fixed(...))`; o
+`fake_cloud_firestore` 4.5.0 não simula `request.time` nem `request.resource.data`
+nas regras, por isso as regras são testadas à parte (adendo da D17). Valor-limite no
+envio (14 s ainda enviando, 15 s erro); 4 casos sem localização em tabela; reabrir a
+tela cria um ViewModel novo (teste de widget e conferido no celular em 11/11).
