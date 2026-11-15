@@ -461,7 +461,8 @@ discador do celular.
   Defesa Civil, que não são abrigos. Cada abrigo mostra nome, endereço, região e
   telefone quando houver; capacidade e coordenadas ficam de fora. Correções de
   digitação: "Cordieros" → "Cordeiros", "Alferedo" → "Alfredo", "fazenda" →
-  "Fazenda". Os telefones dos abrigos também ligam por um toque; quando a fonte não
+  "Fazenda" e "Naútico" → "Náutico". Os telefones dos abrigos também ligam por
+  um toque; quando a fonte não
   traz o DDD, o catálogo acrescenta o 47.
 - **Abrigos abertos:** a camada não diz quais estão abertos (o campo de situação traz
   só a lista de opções). A tela avisa que os abrigos abrem conforme a necessidade e
