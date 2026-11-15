@@ -6,6 +6,9 @@
 // Brasil"), consulta ao Nominatim em 09/11/2026. O retângulo inclui partes de
 // Navegantes, de Balneário Camboriú e do mar: serve para barrar pontos
 // absurdos, não para traçar a divisa.
+// RF04 (D13, ciclo 5c): centroItajai, onde o mapa abre sem a posição do
+// morador. Fonte: Nominatim, "Centre Point" da relation 296666 (ponto da
+// cidade, linked_place = city), consulta de 15/11/2026.
 // =============================================================================
 import '../../domain/models/area_retangular.dart';
 
@@ -16,3 +19,7 @@ final AreaRetangular areaItajai = AreaRetangular(
   longitudeMinima: -48.8690000,
   longitudeMaxima: -48.6213454,
 );
+
+/// Onde o mapa abre quando não há a posição do morador (D13). É um record
+/// (par de valores com igualdade por valor, como o record do Java 16).
+const centroItajai = (latitude: -26.9046787, longitude: -48.6552979);
