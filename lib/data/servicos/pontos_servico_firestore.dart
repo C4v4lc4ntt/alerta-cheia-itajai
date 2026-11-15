@@ -2,7 +2,7 @@
 // pontos_servico_firestore.dart — envio dos pontos de alagamento para a
 // coleção "pontos" do Cloud Firestore (RF03, D17) e leitura em tempo real
 // dos pontos das últimas 6 h (RF04, ciclo 3b), com o ID de cada documento
-// (ciclo 4a).
+// (ciclo 4a). Ciclo 4b: o "Já baixou" soma 1 no documento.
 //
 // ETAPA VERDE: código mínimo para os testes passarem.
 // O FirebaseFirestore chega pelo construtor: no app é o real, nos testes é o
@@ -55,5 +55,15 @@ class PontosServicoFirestore implements PontosServico {
               .whereType<PontoAlagamento>()
               .toList(),
         );
+  }
+
+  /// Soma 1 ao "Já baixou" do documento [id]. O increment soma no servidor
+  /// (campo ausente conta como 0), sem ler antes: dois moradores tocando ao
+  /// mesmo tempo dão +2, sem um apagar o outro.
+  @override
+  Future<void> confirmarJaBaixou(String id) async {
+    await _firestore.collection('pontos').doc(id).update({
+      'jaBaixou': FieldValue.increment(1),
+    });
   }
 }

@@ -4,7 +4,7 @@
 // Em vez de gravar no Firestore, guarda os pontos numa lista para o teste
 // conferir. Pode simular a falha do envio ou um envio que nunca termina
 // (para testar o tempo limite de 15 s, ciclo 21). A leitura do RF04 (ciclo
-// 3b) ainda devolve uma lista vazia.
+// 3b) ainda devolve uma lista vazia, e o "Já baixou" (ciclo 4b) não faz nada.
 // =============================================================================
 import 'dart:async';
 
@@ -35,4 +35,9 @@ class PontosServicoFalso implements PontosServico {
   @override
   Stream<List<PontoAlagamento>> acompanharPontos({required DateTime agora}) =>
       const Stream.empty();
+
+  /// Ainda sem efeito: o ViewModel do mapa (ciclo 5) trará o que o teste
+  /// dele precisar conferir.
+  @override
+  Future<void> confirmarJaBaixou(String id) async {}
 }
