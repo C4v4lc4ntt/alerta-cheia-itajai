@@ -5,7 +5,8 @@
 // ETAPA VERDE: código mínimo para os testes passarem.
 // Acompanha os pontos do Firestore e expõe só os ativos (regra pontoAtivo).
 // Uma revisão a cada minuto tira da tela o ponto que completou 6 h, mesmo
-// sem lista nova. A View só desenha o que ele expõe.
+// sem lista nova. Ciclo 5b: "Já baixou" uma vez por ponto enquanto o app
+// estiver aberto (adendo da D18). A View só desenha o que ele expõe.
 // =============================================================================
 import 'dart:async';
 
@@ -35,6 +36,10 @@ class MapaViewModel extends ChangeNotifier {
   StreamSubscription<List<PontoAlagamento>>? _assinatura;
   Timer? _revisao;
 
+  /// IDs que este celular já confirmou, só em memória (nada vai para o
+  /// disco nem sai do celular, LGPD).
+  final Set<String> _confirmados = {};
+
   /// Pontos que a tela deve desenhar.
   List<PontoAlagamento> get pontosAtivos => _ativos;
 
@@ -46,6 +51,23 @@ class MapaViewModel extends ChangeNotifier {
       _filtrar();
     });
     _revisao = Timer.periodic(intervaloDaRevisao, (_) => _filtrar());
+  }
+
+  /// Diz se o botão "Já baixou" do ponto [id] ainda funciona.
+  bool podeConfirmar(String id) => !_confirmados.contains(id);
+
+  /// Envia o "Já baixou" do ponto [id]. O botão é bloqueado na hora, sem
+  /// esperar o servidor (sem internet, o +1 fica na fila do Firestore); se o
+  /// servidor recusar, o botão volta a funcionar.
+  Future<void> confirmarJaBaixou(String id) async {
+    _confirmados.add(id);
+    notifyListeners();
+    try {
+      await pontos.confirmarJaBaixou(id);
+    } catch (_) {
+      _confirmados.remove(id);
+      notifyListeners();
+    }
   }
 
   /// Guarda só os pontos ativos no momento atual e avisa a tela.
