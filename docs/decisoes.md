@@ -333,3 +333,17 @@ baixou" (RF04).
 nas regras, por isso as regras são testadas à parte (adendo da D17). Valor-limite no
 envio (14 s ainda enviando, 15 s erro); 4 casos sem localização em tabela; reabrir a
 tela cria um ViewModel novo (teste de widget e conferido no celular em 11/11).
+
+**Adendo (15/11/2026), contador do "Já baixou" (RF04):** o número de "Já baixou"
+fica no próprio `PontoAlagamento`, no campo `final int jaBaixou`. O
+`PontoAlagamento.registrar` recebe o parâmetro opcional `int jaBaixou = 0`, então
+um ponto novo começa com 0 e as chamadas do RF03 não mudam. Um valor negativo lança
+`ArgumentError` com o valor recebido. A regra `pontoAtivo` usa a constante
+`limiteJaBaixou = 3`: o ponto fica ativo enquanto `agora − criadoEm < 6 h` **e**
+`jaBaixou < 3` (o que acontecer primeiro o tira do mapa).
+**Descartada:** passar o contador separado para o `pontoAtivo`. A leitura do Firestore
+teria de devolver o ponto e o contador em separado, e o ponto deixaria de
+representar sozinho o que está no mapa.
+**Testes:** valor-limite em volta de 3, uma hora depois da criação (longe das 6 h):
+2 → ativo, 3 → inativo, 4 → inativo. Sem informar o contador, `jaBaixou` = 0.
+`jaBaixou: -1` → `ArgumentError`.
