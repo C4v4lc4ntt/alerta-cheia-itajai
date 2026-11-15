@@ -89,5 +89,34 @@ void main() {
       expect(ponto.altura, AlturaAgua.cintura);
       expect(ponto.criadoEm, momento);
     });
+
+    test('sem informar "Já baixou" → começa em 0', () {
+      // Act
+      final ponto = PontoAlagamento.registrar(
+        latitude: latitudeValida,
+        longitude: longitudeValida,
+        altura: AlturaAgua.joelho,
+        area: areaItajai,
+        agora: relogio,
+      );
+
+      // Assert
+      expect(ponto.jaBaixou, 0);
+    });
+
+    test('"Já baixou" negativo → ArgumentError', () {
+      // -1 é o valor logo abaixo do menor válido (0).
+      expect(
+        () => PontoAlagamento.registrar(
+          latitude: latitudeValida,
+          longitude: longitudeValida,
+          altura: AlturaAgua.joelho,
+          area: areaItajai,
+          agora: relogio,
+          jaBaixou: -1,
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 }
