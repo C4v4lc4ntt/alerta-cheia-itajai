@@ -1,7 +1,8 @@
 // =============================================================================
 // pontos_servico_firestore.dart — envio dos pontos de alagamento para a
 // coleção "pontos" do Cloud Firestore (RF03, D17) e leitura em tempo real
-// dos pontos das últimas 6 h (RF04, ciclo 3b).
+// dos pontos das últimas 6 h (RF04, ciclo 3b), com o ID de cada documento
+// (ciclo 4a).
 //
 // ETAPA VERDE: código mínimo para os testes passarem.
 // O FirebaseFirestore chega pelo construtor: no app é o real, nos testes é o
@@ -45,8 +46,11 @@ class PontosServicoFirestore implements PontosServico {
         .map(
           (consulta) => consulta.docs
               .map(
-                (documento) =>
-                    pontoDoFirestore(documento.data(), area: areaItajai),
+                (documento) => pontoDoFirestore(
+                  documento.data(),
+                  area: areaItajai,
+                  id: documento.id,
+                ),
               )
               .whereType<PontoAlagamento>()
               .toList(),

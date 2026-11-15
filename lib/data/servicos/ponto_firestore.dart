@@ -7,7 +7,8 @@
 // regras exigem criadoEm == request.time, então a data vai como
 // FieldValue.serverTimestamp() e volta como Timestamp.
 // Ciclo 3a do RF04: a leitura traz o contador "Já baixou" (falta do campo
-// vale 0; negativo ou de outro tipo, o documento é ignorado).
+// vale 0; negativo ou de outro tipo, o documento é ignorado). Ciclo 4a: o
+// ponto lido leva o ID do documento, que chega à parte dos dados.
 // =============================================================================
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -32,6 +33,7 @@ Map<String, Object> pontoParaFirestore(PontoAlagamento ponto) => {
 PontoAlagamento? pontoDoFirestore(
   Map<String, dynamic> dados, {
   required AreaRetangular area,
+  String? id,
 }) {
   // O padrão só casa se os 4 campos existirem e tiverem o tipo certo.
   if (dados case {
@@ -61,6 +63,7 @@ PontoAlagamento? pontoDoFirestore(
       area: area,
       agora: () => criadoEm.toDate().toUtc(),
       jaBaixou: jaBaixou,
+      id: id,
     );
   }
   return null;
