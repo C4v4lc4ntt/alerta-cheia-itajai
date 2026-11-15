@@ -159,6 +159,31 @@ posição do morador (LGPD) e sem impedir o uso de quem negar a permissão.
 **Testes:** com permissão, o mapa centraliza na posição recebida; sem permissão ou
 com falha no GPS, centraliza em Itajaí.
 
+**Adendo (15/11/2026), ViewModel do mapa (RF04, ciclos 5a a 5c):**
+- **Centro de Itajaí:** `centroItajai` = -26.9046787, -48.6552979, no
+  `area_itajai.dart`. Fonte: Nominatim, "Centre Point" da relation 296666 (ponto da
+  cidade, `linked_place = city`), consulta de 15/11/2026.
+- **Posição fora da área:** também centraliza em Itajaí, porque o mapa só tem pontos
+  dentro do município (mesmo critério do "fora da área" do RF03, D18).
+- **Revisão a cada minuto:** além de refiltrar a cada lista nova do Firestore, o
+  `MapaViewModel` refiltra os pontos a cada 1 minuto, para o ponto sair da tela no
+  máximo 1 minuto depois de completar 6 h mesmo sem lista nova. Ao fechar o mapa,
+  a inscrição no Firestore e o `Timer` são cancelados.
+- **"Já baixou" sem esperar o servidor:** o botão do ponto é desativado na hora do
+  toque ("Você já avisou"); sem internet, o +1 fica na fila do Firestore e é enviado
+  depois. Se o servidor recusar, o botão volta a funcionar.
+
+**Descartadas:** o meio do retângulo `areaItajai` como centro (inclui mar e partes de
+outros municípios); centralizar numa posição fora da área (mapa sem pontos à vista);
+refiltrar só na chegada de lista nova (ponto vencido ficaria na tela com o mapa
+aberto); esperar o servidor com tempo limite no "Já baixou" (mostraria erro sem
+internet com o +1 ainda na fila).
+**Testes:** `area_itajai_test.dart` (valores da fonte e ponto dentro da área);
+`mapa_view_model_test.dart` (só os ativos, aviso à tela, revisão de 1 minuto com
+`tester.pump`, inscrição cancelada no `dispose`, botão desativado na hora e liberado
+com falha, centro pela posição, pelos 4 casos sem posição e pela posição fora da
+área).
+
 ## D14 · Verificação do estágio com o app fechado (04/11/2026)
 **Contexto:** a notificação local da D06 depende de o app conferir o estágio. Sem
 verificação em segundo plano, o morador só seria avisado ao abrir o app.
