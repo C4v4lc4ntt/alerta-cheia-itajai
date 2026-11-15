@@ -3,7 +3,8 @@
 //
 // Em vez de gravar no Firestore, guarda os pontos numa lista para o teste
 // conferir. Pode simular a falha do envio ou um envio que nunca termina
-// (para testar o tempo limite de 15 s, ciclo 21).
+// (para testar o tempo limite de 15 s, ciclo 21). A leitura do RF04 (ciclo
+// 3b) ainda devolve uma lista vazia.
 // =============================================================================
 import 'dart:async';
 
@@ -28,4 +29,10 @@ class PontosServicoFalso implements PontosServico {
     if (deveFalhar) throw Exception('Falha simulada no envio.');
     enviados.add(ponto);
   }
+
+  /// Ainda sem pontos: o ViewModel do mapa (ciclo 5) vai precisar de
+  /// pontos simulados e trará esse comportamento com o teste dele.
+  @override
+  Stream<List<PontoAlagamento>> acompanharPontos({required DateTime agora}) =>
+      const Stream.empty();
 }
