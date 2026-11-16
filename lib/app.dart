@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/tema/tema_app.dart';
+import 'data/catalogo/catalogo_abrigos.dart';
 import 'data/catalogo/catalogo_contatos.dart';
 import 'ui/ajuda/ajuda_view.dart';
 import 'ui/ajuda/ajuda_view_model.dart';
@@ -124,8 +125,13 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
         criarMarcarPonto: widget.criarMarcarPonto,
         criarMapa: widget.criarMapa,
       ),
-      // RF05: a aba Ajuda recebe o ViewModel e os contatos do catálogo.
-      AjudaView(viewModel: widget.ajudaViewModel, contatos: catalogoContatos),
+      // RF05: a aba Ajuda recebe o ViewModel e os catálogos (D20).
+      AjudaView(
+        viewModel: widget.ajudaViewModel,
+        contatos: catalogoContatos,
+        abrigos: catalogoAbrigos,
+        abrigosAnimais: catalogoAbrigosAnimais,
+      ),
       AjustesView(viewModel: widget.ajustesViewModel),
     ];
 
