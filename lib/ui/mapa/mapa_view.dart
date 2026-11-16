@@ -12,11 +12,15 @@
 // ao abrir, descartando-o ao sair (para de ler o Firestore). Sem Firebase
 // (null) não há mapa: um mapa vazio pareceria "nenhuma rua alagada"
 // (decisão de 15/11).
+// Passo 56 (REFATORAR, visual novo): cabeçalho azul e, embaixo do mapa, um
+// painel com o lembrete de que os pontos vêm da comunidade e o botão
+// "Marcar rua alagada" na largura toda. O comportamento não muda.
 // =============================================================================
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../comum/cabecalho_app.dart';
 import '../marcar_ponto/marcar_ponto_view.dart';
 import '../marcar_ponto/marcar_ponto_view_model.dart';
 import 'mapa_de_pontos.dart';
@@ -77,7 +81,7 @@ class _MapaViewState extends State<MapaView> {
     // A Key fixa permite que os testes encontrem esta tela com find.byKey.
     return Scaffold(
       key: const Key('tela_mapa'),
-      appBar: AppBar(title: const Text('Mapa')),
+      appBar: const CabecalhoApp('Mapa'),
       body: mapa == null ? _semMapa(context) : _comMapa(mapa),
     );
   }
@@ -91,7 +95,7 @@ class _MapaViewState extends State<MapaView> {
           mostrarLadrilhos: widget.mostrarLadrilhos,
         ),
       ),
-      Padding(padding: const EdgeInsets.all(16), child: _botaoMarcar(context)),
+      _PainelDoMapa(botao: _botaoMarcar(context)),
     ],
   );
 
@@ -146,6 +150,43 @@ class _MapaViewState extends State<MapaView> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => MarcarPontoView(viewModel: viewModel),
+      ),
+    );
+  }
+}
+
+/// Painel embaixo do mapa: lembrete de que os pontos são da comunidade e o
+/// botão de marcar na largura toda.
+class _PainelDoMapa extends StatelessWidget {
+  const _PainelDoMapa({required this.botao});
+
+  final Widget botao;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        // Mesma cor dos cartões; o "??" cobre um tema sem cardTheme.
+        color: tema.cardTheme.color ?? tema.colorScheme.surfaceContainerLow,
+        border: Border(top: BorderSide(color: tema.colorScheme.outlineVariant)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Pontos das últimas 6 h, marcados pela comunidade. '
+              'Não é informação oficial.',
+              style: tema.textTheme.bodySmall?.copyWith(
+                color: tema.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            botao,
+          ],
+        ),
       ),
     );
   }

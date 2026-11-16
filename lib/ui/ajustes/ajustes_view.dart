@@ -5,11 +5,14 @@
 // ETAPA VERDE: código mínimo para os testes passarem.
 // No MVVM a View só DESENHA o que o ViewModel entrega; não tem regra de
 // negócio.
+// Passo 56 (REFATORAR, visual novo): cabeçalho azul, avisos com ícone na cor
+// principal e a busca com a borda do tema. Textos e comportamento não mudam.
 // =============================================================================
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../domain/models/bairro.dart';
+import '../comum/cabecalho_app.dart';
 import 'ajustes_view_model.dart';
 
 /// Tela da aba "Ajustes".
@@ -51,6 +54,7 @@ class _AjustesViewState extends State<AjustesView> {
     return Scaffold(
       // A Key fixa permite que os testes encontrem esta tela com find.byKey.
       key: const Key('tela_ajustes'),
+      appBar: const CabecalhoApp('Ajustes'),
       body: SafeArea(
         // Redesenha toda vez que o ViewModel chama notifyListeners().
         child: ListenableBuilder(
@@ -86,7 +90,6 @@ class _AjustesViewState extends State<AjustesView> {
                   decoration: const InputDecoration(
                     labelText: 'Buscar bairro',
                     prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -116,7 +119,10 @@ class _Aviso extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        leading: const Icon(Icons.info_outline),
+        leading: Icon(
+          Icons.info_outline,
+          color: Theme.of(context).colorScheme.primary,
+        ),
         title: Text(texto),
       ),
     );

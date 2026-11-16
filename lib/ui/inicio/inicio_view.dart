@@ -3,11 +3,18 @@
 //
 // No MVVM a View só DESENHA o que o ViewModel entrega; não tem regra de
 // negócio. Os textos e cores vêm de ui/comum/formatos.dart.
+// Passo 56 (REFATORAR, visual novo): cabeçalho azul, barrinha da cor do
+// estágio ao lado de cada estação, a estação mais grave num cartão com ícone
+// e o botão da tábua ocupando a largura. Os textos e o comportamento não
+// mudam.
 // =============================================================================
 import 'package:flutter/material.dart';
 
+import '../comum/cabecalho_app.dart';
 import '../comum/formatos.dart';
+import '../comum/indicador_estagio.dart';
 import 'cartao_bairro.dart';
+import 'cartao_mais_grave.dart';
 import 'cartao_oficial.dart';
 import 'inicio_view_model.dart';
 import 'tabua_mare_view.dart';
@@ -57,6 +64,7 @@ class _InicioViewState extends State<InicioView> {
     return Scaffold(
       // A Key fixa permite que os testes encontrem esta tela com find.byKey.
       key: const Key('tela_inicio'),
+      appBar: const CabecalhoApp('Início'),
       body: SafeArea(
         // Redesenha toda vez que o ViewModel chama notifyListeners().
         child: ListenableBuilder(
@@ -95,10 +103,20 @@ class _ConviteBairro extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Escolha um bairro para receber avisos quando o estágio mudar.',
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ExcludeSemantics(child: Icon(Icons.notifications_outlined)),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Escolha um bairro para receber avisos quando o estágio '
+                    'mudar.',
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             FilledButton(
               onPressed: aoEscolherBairro,
               child: const Text('Escolher bairro'),
@@ -152,6 +170,7 @@ class _Pronto extends StatelessWidget {
           if (estado.bairros.isEmpty) ...[
             Card(
               child: ListTile(
+                leading: IndicadorEstagio(estado.estacoes.first.estagio),
                 title: Text(nomeDaEstacao(estacao)),
                 subtitle: const Text('Estação mais perto da cota'),
                 trailing: Text(
@@ -169,12 +188,7 @@ class _Pronto extends StatelessWidget {
           ],
           // A estação mais grave nunca fica escondida.
           if (estado.maisCriticaForaDosBairros) ...[
-            Text(
-              'Estação mais grave da cidade: ${nomeDaEstacao(estacao)} · '
-              '${formatarNivel(estado.leituraMaisCritica.nivel)} · '
-              '${nomeDoEstagio(estado.estacoes.first.estagio)}',
-              style: texto.bodyMedium,
-            ),
+            CartaoMaisGrave(estado: estado),
             const SizedBox(height: 12),
           ],
           Card(
@@ -185,11 +199,7 @@ class _Pronto extends StatelessWidget {
                   ListTile(
                     dense: true,
                     // A cor nunca é a única informação: o estágio vem escrito.
-                    leading: Icon(
-                      Icons.circle,
-                      size: 14,
-                      color: corDoEstagio(situacao.estagio),
-                    ),
+                    leading: IndicadorEstagio(situacao.estagio),
                     title: Text(nomeDaEstacao(situacao.estacao)),
                     subtitle: Text(nomeDoEstagio(situacao.estagio)),
                     trailing: Text(formatarNivel(situacao.leitura.nivel)),
@@ -206,7 +216,14 @@ class _Pronto extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // A situação já está no cartão grande (D16).
-                    Text('Boletim da Defesa Civil', style: texto.labelMedium),
+                    Text(
+                      'Boletim da Defesa Civil',
+                      style: texto.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(boletim.texto),
                   ],
@@ -226,6 +243,9 @@ class _Pronto extends StatelessWidget {
               const SizedBox(height: 4),
             ],
             FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => TabuaMareView(tabua: tabua),

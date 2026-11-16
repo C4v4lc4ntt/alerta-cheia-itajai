@@ -4,14 +4,15 @@
 // O ThemeData é herdado por todos os widgets: um Text sem estilo próprio
 // já sai com a fonte Archivo e a cor de texto do mockup.
 // Passo 56 (REFATORAR, visual novo "sério e confiável"): cabeçalho
-// azul-petróleo, cartões brancos com borda, botões com 48 px de altura,
-// filtros e barra de navegação com o item escolhido em azul-claro. Só muda a
-// aparência; o comportamento das telas e os testes continuam iguais.
+// azul-petróleo, cartões com borda, botões com 48 px de altura, filtros e
+// barra de navegação com o item escolhido em azul-claro, e um tema escuro com
+// as mesmas regras. Só muda a aparência; o comportamento e os testes não.
 // =============================================================================
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'cores.dart';
+import 'paleta.dart';
 
 /// Fábrica do tema do app.
 abstract final class TemaApp {
@@ -23,44 +24,53 @@ abstract final class TemaApp {
   static const Size _tamanhoMinimoBotao = Size(48, 48);
 
   /// Tema claro.
-  static ThemeData claro() {
+  static ThemeData claro() => _montar(paletaClara);
+
+  /// Tema escuro, usado quando o celular está no modo escuro.
+  static ThemeData escuro() => _montar(paletaEscura);
+
+  // Monta o ThemeData a partir de uma paleta.
+  static ThemeData _montar(Paleta p) {
     // ColorScheme.fromSeed gera uma paleta Material 3 inteira a partir de uma
     // cor "semente"; depois sobrescrevemos as cores que o mockup define.
     final esquema = ColorScheme.fromSeed(
       seedColor: CoresApp.principal,
-      primary: CoresApp.principal,
-      surface: CoresApp.fundo,
-      onSurface: CoresApp.texto,
-      onSurfaceVariant: CoresApp.textoSecundario,
-      outlineVariant: CoresApp.borda,
-      secondaryContainer: CoresApp.principalSuave,
-      onSecondaryContainer: CoresApp.principal,
+      brightness: p.brilho,
+      primary: p.principal,
+      onPrimary: p.textoNoPrincipal,
+      surface: p.fundo,
+      onSurface: p.texto,
+      onSurfaceVariant: p.textoSecundario,
+      outlineVariant: p.borda,
+      surfaceContainerHighest: p.superficieVariante,
+      secondaryContainer: p.principalSuave,
+      onSecondaryContainer: p.textoNoPrincipalSuave,
     );
 
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: esquema,
-      scaffoldBackgroundColor: CoresApp.fundo,
+      scaffoldBackgroundColor: p.fundo,
       // Nome da família declarada no pubspec.yaml (seção "fonts").
       fontFamily: 'Archivo',
     );
 
     return base.copyWith(
       textTheme: _textos(base.textTheme),
-      appBarTheme: _cabecalho(),
-      cardTheme: _cartoes(),
+      appBarTheme: _cabecalho(p),
+      cardTheme: _cartoes(p),
       filledButtonTheme: FilledButtonThemeData(style: _estiloBotao()),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: _estiloBotao().copyWith(
-          side: const WidgetStatePropertyAll(
-            BorderSide(color: CoresApp.principal, width: 1.5),
+          side: WidgetStatePropertyAll(
+            BorderSide(color: p.principal, width: 1.5),
           ),
         ),
       ),
-      chipTheme: _filtros(base.chipTheme),
-      navigationBarTheme: _navegacao(),
-      inputDecorationTheme: _campos(),
-      dividerTheme: const DividerThemeData(color: CoresApp.borda),
+      chipTheme: _filtros(base.chipTheme, p),
+      navigationBarTheme: _navegacao(p),
+      inputDecorationTheme: _campos(p),
+      dividerTheme: DividerThemeData(color: p.borda),
       // Sem as linhas que o ExpansionTile desenha ao abrir.
       expansionTileTheme: const ExpansionTileThemeData(
         shape: Border(),
@@ -79,16 +89,16 @@ abstract final class TemaApp {
     labelLarge: base.labelLarge?.copyWith(fontWeight: FontWeight.w600),
   );
 
-  // Cabeçalho azul-petróleo com texto branco; os ícones da barra de status
-  // ficam claros para aparecerem sobre o azul.
-  static AppBarTheme _cabecalho() => const AppBarTheme(
-    backgroundColor: CoresApp.principal,
+  // Cabeçalho azul com texto branco; os ícones da barra de status ficam
+  // claros para aparecerem sobre o azul.
+  static AppBarTheme _cabecalho(Paleta p) => AppBarTheme(
+    backgroundColor: p.cabecalho,
     foregroundColor: Colors.white,
     centerTitle: false,
     elevation: 0,
     scrolledUnderElevation: 0,
     systemOverlayStyle: SystemUiOverlayStyle.light,
-    titleTextStyle: TextStyle(
+    titleTextStyle: const TextStyle(
       fontFamily: 'Archivo',
       fontSize: 22,
       fontWeight: FontWeight.w800,
@@ -96,30 +106,30 @@ abstract final class TemaApp {
     ),
   );
 
-  // Cartões brancos, sem sombra, com borda fina e cantos de 16 px.
-  static CardThemeData _cartoes() => const CardThemeData(
-    color: CoresApp.superficie,
+  // Cartões sem sombra, com borda fina e cantos de 16 px.
+  static CardThemeData _cartoes(Paleta p) => CardThemeData(
+    color: p.superficie,
     surfaceTintColor: Colors.transparent,
     elevation: 0,
-    margin: EdgeInsets.symmetric(vertical: 6),
+    margin: const EdgeInsets.symmetric(vertical: 6),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(_raioCartao)),
-      side: BorderSide(color: CoresApp.borda),
+      borderRadius: const BorderRadius.all(Radius.circular(_raioCartao)),
+      side: BorderSide(color: p.borda),
     ),
   );
 
   // Base comum dos botões: 48 px de altura, cantos de 12 px e texto firme.
-  static ButtonStyle _estiloBotao() => ButtonStyle(
-    minimumSize: const WidgetStatePropertyAll(_tamanhoMinimoBotao),
-    padding: const WidgetStatePropertyAll(
+  static ButtonStyle _estiloBotao() => const ButtonStyle(
+    minimumSize: WidgetStatePropertyAll(_tamanhoMinimoBotao),
+    padding: WidgetStatePropertyAll(
       EdgeInsets.symmetric(horizontal: 18, vertical: 12),
     ),
-    shape: const WidgetStatePropertyAll(
+    shape: WidgetStatePropertyAll(
       RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(_raioBotao)),
       ),
     ),
-    textStyle: const WidgetStatePropertyAll(
+    textStyle: WidgetStatePropertyAll(
       TextStyle(
         fontFamily: 'Archivo',
         fontSize: 15,
@@ -128,25 +138,27 @@ abstract final class TemaApp {
     ),
   );
 
-  // Filtros (ChoiceChip): pílulas brancas; a escolhida fica azul-clara.
-  static ChipThemeData _filtros(ChipThemeData base) => base.copyWith(
-    backgroundColor: CoresApp.superficie,
-    selectedColor: CoresApp.principalSuave,
-    side: const BorderSide(color: CoresApp.borda),
+  // Filtros (ChoiceChip): pílulas na cor do cartão; a escolhida fica
+  // azul-clara.
+  static ChipThemeData _filtros(ChipThemeData base, Paleta p) => base.copyWith(
+    backgroundColor: p.superficie,
+    selectedColor: p.principalSuave,
+    side: BorderSide(color: p.borda),
     shape: const StadiumBorder(),
-    labelStyle: const TextStyle(
+    labelStyle: TextStyle(
       fontFamily: 'Archivo',
       fontWeight: FontWeight.w600,
-      color: CoresApp.texto,
+      color: p.texto,
     ),
     showCheckmark: false,
   );
 
-  // Barra de navegação branca; a aba atual ganha a pílula azul-clara.
-  static NavigationBarThemeData _navegacao() => NavigationBarThemeData(
-    backgroundColor: CoresApp.superficie,
+  // Barra de navegação na cor do cartão; a aba atual ganha a pílula
+  // azul-clara.
+  static NavigationBarThemeData _navegacao(Paleta p) => NavigationBarThemeData(
+    backgroundColor: p.superficie,
     surfaceTintColor: Colors.transparent,
-    indicatorColor: CoresApp.principalSuave,
+    indicatorColor: p.principalSuave,
     elevation: 0,
     labelTextStyle: WidgetStateProperty.resolveWith(
       (estados) => TextStyle(
@@ -154,34 +166,31 @@ abstract final class TemaApp {
         fontSize: 12,
         fontWeight: FontWeight.w600,
         color: estados.contains(WidgetState.selected)
-            ? CoresApp.texto
-            : CoresApp.textoSecundario,
+            ? p.texto
+            : p.textoSecundario,
       ),
     ),
     iconTheme: WidgetStateProperty.resolveWith(
       (estados) => IconThemeData(
         color: estados.contains(WidgetState.selected)
-            ? CoresApp.principal
-            : CoresApp.textoSecundario,
+            ? p.textoNoPrincipalSuave
+            : p.textoSecundario,
       ),
     ),
   );
 
-  // Campos de texto brancos com borda arredondada, como a busca de bairros.
-  static InputDecorationTheme _campos() => const InputDecorationTheme(
-    filled: true,
-    fillColor: CoresApp.superficie,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(_raioBotao)),
-      borderSide: BorderSide(color: CoresApp.borda, width: 1.5),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(_raioBotao)),
-      borderSide: BorderSide(color: CoresApp.borda, width: 1.5),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(_raioBotao)),
-      borderSide: BorderSide(color: CoresApp.principal, width: 2),
-    ),
-  );
+  // Campos de texto com borda arredondada, como a busca de bairros.
+  static InputDecorationTheme _campos(Paleta p) {
+    OutlineInputBorder borda(Color cor, double largura) => OutlineInputBorder(
+      borderRadius: const BorderRadius.all(Radius.circular(_raioBotao)),
+      borderSide: BorderSide(color: cor, width: largura),
+    );
+    return InputDecorationTheme(
+      filled: true,
+      fillColor: p.superficie,
+      border: borda(p.borda, 1.5),
+      enabledBorder: borda(p.borda, 1.5),
+      focusedBorder: borda(p.principal, 2),
+    );
+  }
 }

@@ -3,10 +3,13 @@
 //
 // ETAPA VERDE: código mínimo para os testes passarem.
 // As estações próximas são uma ESTIMATIVA (D08), e o título diz isso.
+// Passo 56 (REFATORAR, visual novo): barrinha da cor do estágio no lugar da
+// bolinha e o nome da estação em negrito. Os textos não mudam.
 // =============================================================================
 import 'package:flutter/material.dart';
 
 import '../comum/formatos.dart';
+import '../comum/indicador_estagio.dart';
 import 'inicio_view_model.dart';
 
 /// Cartão com as estações próximas de um bairro, com nível e estágio.
@@ -42,12 +45,11 @@ class CartaoBairroView extends StatelessWidget {
               ListTile(
                 dense: true,
                 // A cor nunca é a única informação: o estágio vem escrito.
-                leading: Icon(
-                  Icons.circle,
-                  size: 14,
-                  color: corDoEstagio(situacao.estagio),
+                leading: IndicadorEstagio(situacao.estagio),
+                title: Text(
+                  nomeDaEstacao(situacao.estacao),
+                  style: texto.titleSmall,
                 ),
-                title: Text(nomeDaEstacao(situacao.estacao)),
                 subtitle: Text(
                   '${formatarNivel(situacao.leitura.nivel)} · '
                   '${nomeDoEstagio(situacao.estagio)}',

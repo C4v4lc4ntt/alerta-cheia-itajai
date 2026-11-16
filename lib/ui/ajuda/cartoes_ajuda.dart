@@ -4,6 +4,9 @@
 // REFATORAR: separadas do ajuda_view.dart no ciclo 6c2, sem mudar o
 // comportamento, para a tela ficar abaixo de ~200 linhas (CLAUDE.md, seção 4).
 // São públicas porque, em Dart, o "_" deixa privado só dentro do arquivo.
+// Passo 56 (REFATORAR, visual novo): títulos de seção maiores; contato com o
+// número grande no botão à direita; abrigo com ícone de endereço. Textos,
+// rótulos de leitor de tela e toques não mudam.
 // =============================================================================
 import 'package:flutter/material.dart';
 
@@ -25,7 +28,10 @@ class TituloSecao extends StatelessWidget {
       padding: const EdgeInsets.only(top: 16, bottom: 8),
       child: Semantics(
         header: true,
-        child: Text(texto, style: Theme.of(context).textTheme.titleMedium),
+        child: Text(
+          texto,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 19),
+        ),
       ),
     );
   }
@@ -48,20 +54,40 @@ class CartaoContato extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        child: Row(
           children: [
-            Text(contato.nome, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(contato.descricao),
-            const SizedBox(height: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(contato.nome, style: tema.textTheme.titleMedium),
+                  const SizedBox(height: 2),
+                  Text(
+                    contato.descricao,
+                    style: tema.textTheme.bodyMedium?.copyWith(
+                      color: tema.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // O número fica grande no botão, para achar com um olhar.
             FilledButton.icon(
               onPressed: aoLigar,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(104, 56),
+                textStyle: const TextStyle(
+                  fontFamily: 'Archivo',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               icon: const Icon(Icons.phone),
-              // O leitor de tela anuncia "Ligar para Defesa Civil, 199".
               label: Text(
                 contato.numero,
                 semanticsLabel: 'Ligar para ${contato.nome}, ${contato.numero}',
@@ -74,7 +100,6 @@ class CartaoContato extends StatelessWidget {
   }
 }
 
-/// Cartão de um abrigo: nome, endereço e, se houver telefone, o botão.
 class CartaoAbrigo extends StatelessWidget {
   /// Cria o cartão do [abrigo].
   const CartaoAbrigo({super.key, required this.abrigo, required this.aoLigar});
@@ -94,9 +119,22 @@ class CartaoAbrigo extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(abrigo.nome, style: Theme.of(context).textTheme.titleSmall),
+            Text(abrigo.nome, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            Text(abrigo.endereco),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ExcludeSemantics(
+                  child: Icon(
+                    Icons.place_outlined,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(child: Text(abrigo.endereco)),
+              ],
+            ),
             if (telefone != null) ...[
               const SizedBox(height: 8),
               FilledButton.tonalIcon(

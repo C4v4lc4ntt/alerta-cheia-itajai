@@ -10,6 +10,8 @@
 // Passo 56 (adendo da D20), ETAPA VERDE: os abrigos ganham um filtro por região
 // (mais "Animais") e as orientações ganham abas; cada um começa na primeira
 // opção. A escolha é só da tela, por isso fica no State e não no ViewModel.
+// REFATORAR (visual novo): cabeçalho azul e títulos "Ligue com um toque" e
+// "O que fazer" separando as partes da aba. O comportamento não muda.
 // =============================================================================
 import 'package:flutter/material.dart';
 
@@ -17,6 +19,7 @@ import '../../domain/models/abrigo.dart';
 import '../../domain/models/contato_emergencia.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/regras/aviso_enchente_sem_chuva.dart';
+import '../comum/cabecalho_app.dart';
 import 'ajuda_view_model.dart';
 import 'cartoes_ajuda.dart';
 import 'cartoes_orientacoes.dart';
@@ -76,7 +79,7 @@ class _AjudaViewState extends State<AjudaView> {
     // A Key fixa permite que os testes encontrem esta tela com find.byKey.
     return Scaffold(
       key: const Key('tela_ajuda'),
-      appBar: AppBar(title: const Text('Ajuda')),
+      appBar: const CabecalhoApp('Ajuda'),
       // ListenableBuilder redesenha a lista quando o ViewModel avisa.
       body: ListenableBuilder(
         listenable: viewModel,
@@ -95,6 +98,7 @@ class _AjudaViewState extends State<AjudaView> {
                   key: Key('aviso_em_destaque'),
                   emDestaque: true,
                 ),
+              const TituloSecao('Ligue com um toque'),
               for (final contato in widget.contatos)
                 CartaoContato(
                   contato: contato,
@@ -119,6 +123,7 @@ class _AjudaViewState extends State<AjudaView> {
                 _cartaoAbrigo(abrigo),
               // RF06: orientações das fontes oficiais (D20), uma aba por vez.
               if (secao != null) ...[
+                const TituloSecao('O que fazer'),
                 FiltroDeOpcoes(
                   opcoes: secoes,
                   escolhida: secao,
