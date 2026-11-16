@@ -3,7 +3,9 @@
 // emergência, os abrigos e as orientações, liga com um toque e mostra o aviso
 // de "enchente sem chuva" (em destaque a partir de Atenção).
 //
-// Escrito ANTES do código (etapa vermelha do TDD).
+// Escrito ANTES do código (etapa vermelha do TDD). Passo 56 (s04b, adendo da
+// D20): os abrigos ganham um filtro por região e as orientações ganham abas;
+// os testes do filtro e das abas também vieram antes do código.
 // Usa o catálogo real (página "Telefones de emergência" da Defesa Civil,
 // 15/11/2026) e o discador falso de test/apoio: nada abre de verdade.
 // =============================================================================
@@ -22,6 +24,14 @@ void main() {
   late DiscadorFalso discador;
 
   setUp(() => discador = DiscadorFalso());
+
+  // Tela bem alta: o ListView monta todos os itens de uma vez, então um
+  // "findsNothing" prova que o item está escondido (e não só fora da tela).
+  void usarTelaAlta(WidgetTester tester) {
+    tester.view.physicalSize = const Size(800, 8000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+  }
 
   // Monta a aba Ajuda sozinha, com o ViewModel de verdade.
   Future<void> abrirTela(WidgetTester tester) async {
@@ -145,20 +155,33 @@ void main() {
       expect(find.text(aviso), findsOneWidget);
     });
 
-    testWidgets('mostra cada região com nome e endereço dos abrigos', (
+    // Passo 56: o filtro começa na primeira região do mapa de abrigos.
+    testWidgets('filtro começa na primeira região e esconde as outras', (
       tester,
     ) async {
+      usarTelaAlta(tester);
       await abrirComAbrigos(tester);
 
-      for (final regiao in abrigos.keys) {
-        for (final abrigo in abrigos[regiao]!) {
-          await rolarAte(tester, find.text(abrigo.endereco));
+      expect(find.text('Paróquia São Cristóvão'), findsOneWidget);
+      expect(find.text('R. Odílio Garcia, 445, Cordeiros'), findsOneWidget);
+      expect(find.text('Capela Santo Antônio'), findsNothing);
+    });
 
-          expect(find.text(regiao), findsOneWidget);
-          expect(find.text(abrigo.nome), findsOneWidget);
-          expect(find.text(abrigo.endereco), findsOneWidget);
-        }
-      }
+    testWidgets('tocar em "CRAS Espinheiros" mostra só os abrigos dela', (
+      tester,
+    ) async {
+      usarTelaAlta(tester);
+      await abrirComAbrigos(tester);
+
+      await tester.tap(find.text('CRAS Espinheiros'));
+      await tester.pump();
+
+      expect(find.text('Capela Santo Antônio'), findsOneWidget);
+      expect(
+        find.text('R. Fermino Vieira Cordeiro, 915, Espinheiros'),
+        findsOneWidget,
+      );
+      expect(find.text('Paróquia São Cristóvão'), findsNothing);
     });
 
     testWidgets('abrigo com telefone mostra (47) 3341-1408 e liga', (
@@ -178,9 +201,13 @@ void main() {
     });
 
     testWidgets('abrigo sem telefone não tem botão de ligar', (tester) async {
+      usarTelaAlta(tester);
       await abrirComAbrigos(tester);
 
-      await rolarAte(tester, find.text('Capela Santo Antônio'));
+      // A Capela fica na segunda região: escolhe o filtro dela primeiro.
+      await tester.tap(find.text('CRAS Espinheiros'));
+      await tester.pump();
+      expect(find.text('Capela Santo Antônio'), findsOneWidget);
 
       expect(
         find.bySemanticsLabel(RegExp('Ligar para Capela Santo Antônio')),
@@ -188,15 +215,29 @@ void main() {
       );
     });
 
-    testWidgets('mostra a seção "Abrigos para animais" com o endereço', (
+    testWidgets('tocar em "Animais" mostra os abrigos para animais', (
       tester,
     ) async {
+      usarTelaAlta(tester);
       await abrirComAbrigos(tester);
 
-      await rolarAte(tester, find.text('Rua Jorge Tzachel, 344 - Fazenda'));
+      await tester.tap(find.text('Animais'));
+      await tester.pump();
 
-      expect(find.text('Abrigos para animais'), findsOneWidget);
       expect(find.text('Rua Jorge Tzachel, 344 - Fazenda'), findsOneWidget);
+      expect(find.text('Paróquia São Cristóvão'), findsNothing);
+    });
+
+    // Acessibilidade dos botões novos do filtro (CLAUDE.md, seção 7).
+    testWidgets('filtro de abrigos segue as regras de alvo e rótulo', (
+      tester,
+    ) async {
+      final semantica = tester.ensureSemantics();
+      await abrirComAbrigos(tester);
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      semantica.dispose();
     });
   });
 
@@ -237,17 +278,35 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('mostra as 4 seções com o primeiro item de cada', (
+    // Passo 56: as orientações ganham abas e abrem em "Antes".
+    testWidgets('orientações abrem na aba "Antes" e escondem as outras', (
       tester,
     ) async {
+      usarTelaAlta(tester);
       await abrirComOrientacoes(tester);
 
-      for (final secao in catalogoOrientacoes.entries) {
-        // Rola até o título: o primeiro item vem logo abaixo dele.
-        await rolarAte(tester, find.text(secao.key));
+      expect(find.text(catalogoOrientacoes['Antes']!.first), findsOneWidget);
+      expect(find.text(catalogoOrientacoes['Durante']!.first), findsNothing);
+    });
 
-        expect(find.text(secao.key), findsOneWidget);
-        expect(find.text(secao.value.first), findsOneWidget);
+    // Tabela de casos: tocar em cada aba mostra só os itens dela.
+    testWidgets('tocar numa aba mostra só os itens daquela seção', (
+      tester,
+    ) async {
+      usarTelaAlta(tester);
+      await abrirComOrientacoes(tester);
+
+      for (final escolhida in catalogoOrientacoes.keys) {
+        await tester.tap(find.text(escolhida));
+        await tester.pump();
+
+        catalogoOrientacoes.forEach((secao, itens) {
+          expect(
+            find.text(itens.first),
+            secao == escolhida ? findsOneWidget : findsNothing,
+            reason: 'aba "$escolhida", item de "$secao"',
+          );
+        });
       }
     });
 
