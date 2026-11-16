@@ -5,6 +5,9 @@
 // lembrando que o app é complemento e que a emergência é o 199 (CLAUDE.md,
 // seção 7: o caminho para o 199, o 193 e o 192 fica sempre visível).
 // As cores vêm do appBarTheme (lib/core/tema/tema_app.dart).
+// Passo 57, ETAPA VERDE: as três linhas viram um único item para o leitor de
+// tela (MergeSemantics). O TalkBack lê o cabeçalho de uma vez, e o teste de
+// contraste mede o texto contra o fundo azul, e não cada linha sozinha.
 // =============================================================================
 import 'package:flutter/material.dart';
 
@@ -36,25 +39,29 @@ class CabecalhoApp extends StatelessWidget implements PreferredSizeWidget {
     const claro = TextStyle(color: CoresApp.cabecalhoSecundario);
     return AppBar(
       toolbarHeight: _altura,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Alerta Cheia Itajaí',
-            style: claro.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
+      // MergeSemantics junta as três linhas num só item do leitor de tela,
+      // que continua marcado como cabeçalho.
+      title: MergeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Alerta Cheia Itajaí',
+              style: claro.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+              ),
             ),
-          ),
-          // header: o leitor de tela anuncia o título como cabeçalho.
-          Semantics(header: true, child: Text(titulo)),
-          Text(
-            textoComplemento,
-            style: claro.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-        ],
+            // header: o leitor de tela anuncia o título como cabeçalho.
+            Semantics(header: true, child: Text(titulo)),
+            Text(
+              textoComplemento,
+              style: claro.copyWith(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }

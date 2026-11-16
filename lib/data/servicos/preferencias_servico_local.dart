@@ -5,10 +5,14 @@
 // ETAPA VERDE: código mínimo para os testes passarem.
 // SharedPreferencesAsync lê do armazenamento a cada chamada, sem cache, porque
 // a tarefa em segundo plano e a tela rodam separadas.
+// Passo 57 (D21), ETAPA VERDE: a última consulta fica guardada como texto
+// JSON (a conversão está em consulta_json.dart).
 // =============================================================================
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../domain/models/consulta_guardada.dart';
 import '../../domain/models/estagio_alerta.dart';
+import 'consulta_json.dart';
 import 'preferencias_servico.dart';
 
 /// Implementação real de [PreferenciasServico].
@@ -21,6 +25,7 @@ class PreferenciasServicoLocal implements PreferenciasServico {
 
   static const _chaveBairros = 'bairros_escolhidos';
   static const _chaveUltimoEstagio = 'ultimo_estagio';
+  static const _chaveUltimaConsulta = 'ultima_consulta';
 
   @override
   Future<List<String>> lerBairrosEscolhidos() async {
@@ -47,5 +52,16 @@ class PreferenciasServicoLocal implements PreferenciasServico {
   @override
   Future<void> apagarUltimoEstagio() {
     return armazem.remove(_chaveUltimoEstagio);
+  }
+
+  @override
+  Future<ConsultaGuardada?> lerUltimaConsulta() async {
+    final texto = await armazem.getString(_chaveUltimaConsulta);
+    return texto == null ? null : consultaDeJson(texto);
+  }
+
+  @override
+  Future<void> salvarUltimaConsulta(ConsultaGuardada consulta) {
+    return armazem.setString(_chaveUltimaConsulta, consultaParaJson(consulta));
   }
 }

@@ -4,6 +4,9 @@
 // Junta níveis, boletim e tábua de marés, calcula o estágio da cidade com as
 // regras do domínio e escolhe a estação mais crítica para a tela mostrar.
 // A View só desenha o estado que ele expõe.
+// Passo 57 (D21), ETAPA VERDE: a consulta que dá certo fica guardada no
+// celular; se a busca falhar, a tela mostra a guardada, marcada como "sem
+// internet".
 // =============================================================================
 import 'package:flutter/foundation.dart';
 
@@ -13,6 +16,7 @@ import '../../data/servicos/boletim_servico.dart';
 import '../../data/servicos/nivel_rio_servico.dart';
 import '../../data/servicos/preferencias_servico.dart';
 import '../../domain/models/boletim_oficial.dart';
+import '../../domain/models/consulta_guardada.dart';
 import '../../domain/models/estacao.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/models/leitura_nivel.dart';
@@ -55,6 +59,7 @@ final class InicioPronto extends EstadoInicio {
     required this.maisCriticaForaDosBairros,
     this.boletim,
     this.tabuaMare,
+    this.semInternet = false,
   });
 
   /// Estágio mais grave entre as estações (D02).
@@ -93,6 +98,10 @@ final class InicioPronto extends EstadoInicio {
 
   /// Tábua de marés do mês; null se não houver ou se o portal falhar (D10).
   final TabuaMare? tabuaMare;
+
+  /// Se a tela mostra a última consulta guardada porque a busca falhou (D21).
+  /// Nesse caso, [consultadoEm] é a hora da consulta guardada.
+  final bool semInternet;
 }
 
 /// ViewModel da tela Início: busca os dados e calcula o estágio da cidade.
@@ -133,48 +142,101 @@ class InicioViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final consultadoEm = agora();
-      final leituras = await niveis.buscarLeituras();
-      final avaliadas = avaliarLeituras(leituras, catalogoEstacoes);
-
-      // Sem nenhuma estação reconhecida não há base para dizer o estágio.
-      if (avaliadas.isEmpty) {
-        _estado = InicioErro(_mensagemErro);
-      } else {
-        final ordenadas = [...avaliadas]..sort(maisCriticaPrimeiro);
-        final critica = ordenadas.first;
-        // Complemento: se a leitura falhar, a tela segue sem convite e sem
-        // cartões de bairro.
-        final escolhidos = await _semFalhar(preferencias.lerBairrosEscolhidos);
-        final cartoes = _cartoesDosBairros(escolhidos ?? const [], avaliadas);
-        _estado = InicioPronto(
-          estagioCidade: estagioMaisGrave([
-            for (final avaliada in avaliadas) avaliada.estagio,
-          ]),
-          leituras: leituras,
-          atualizadoEm: leituras
-              .map((l) => l.medidoEm)
-              .reduce((a, b) => a.isBefore(b) ? a : b),
-          consultadoEm: consultadoEm,
-          estacaoMaisCritica: critica.estacao,
-          leituraMaisCritica: critica.leitura,
-          estacoes: ordenadas,
-          semBairroEscolhido: escolhidos?.isEmpty ?? false,
-          bairros: cartoes,
-          maisCriticaForaDosBairros:
-              cartoes.isNotEmpty &&
-              !cartoes.any((cartao) => _contem(cartao, critica.estacao.codigo)),
-          boletim: await _semFalhar(boletins.buscarBoletim),
-          tabuaMare: await _semFalhar(boletins.buscarTabuaMare),
-        );
-      }
+      _estado = await _consultarPortal();
     } catch (_) {
-      _estado = InicioErro(_mensagemErro);
+      // D21: sem internet (ou portal fora do ar), mostra a última consulta
+      // guardada; sem nenhuma guardada, a mensagem de erro de sempre.
+      _estado = await _ultimaGuardada() ?? InicioErro(_mensagemErro);
     }
     notifyListeners();
 
     // Por último: quem abre o app vê o estágio sem esperar a verificação.
     await verificar();
+  }
+
+  // Busca níveis, boletim e tábua no portal e guarda a consulta (D21).
+  Future<EstadoInicio> _consultarPortal() async {
+    final consultadoEm = agora();
+    final leituras = await niveis.buscarLeituras();
+    final estado = await _montar(
+      leituras: leituras,
+      consultadoEm: consultadoEm,
+      boletim: await _semFalhar(boletins.buscarBoletim),
+      tabuaMare: await _semFalhar(boletins.buscarTabuaMare),
+    );
+    if (estado is InicioPronto) {
+      await _guardar(
+        ConsultaGuardada(
+          leituras: leituras,
+          boletim: estado.boletim,
+          consultadoEm: consultadoEm,
+        ),
+      );
+    }
+    return estado;
+  }
+
+  // A consulta guardada pronta para exibir; null se não houver (D21).
+  Future<InicioPronto?> _ultimaGuardada() async {
+    final guardada = await _semFalhar(preferencias.lerUltimaConsulta);
+    if (guardada == null) return null;
+    final estado = await _montar(
+      leituras: guardada.leituras,
+      consultadoEm: guardada.consultadoEm,
+      boletim: guardada.boletim,
+      semInternet: true,
+    );
+    return estado is InicioPronto ? estado : null;
+  }
+
+  // Guardar é complemento: se falhar, a tela segue com a consulta atual.
+  Future<void> _guardar(ConsultaGuardada consulta) async {
+    try {
+      await preferencias.salvarUltimaConsulta(consulta);
+    } catch (_) {
+      // Sem guardar, a próxima falha só mostra a consulta anterior.
+    }
+  }
+
+  // Calcula o estado da tela a partir das leituras (do portal ou guardadas).
+  Future<EstadoInicio> _montar({
+    required List<LeituraNivel> leituras,
+    required DateTime consultadoEm,
+    BoletimOficial? boletim,
+    TabuaMare? tabuaMare,
+    bool semInternet = false,
+  }) async {
+    final avaliadas = avaliarLeituras(leituras, catalogoEstacoes);
+    // Sem nenhuma estação reconhecida não há base para dizer o estágio.
+    if (avaliadas.isEmpty) return InicioErro(_mensagemErro);
+
+    final ordenadas = [...avaliadas]..sort(maisCriticaPrimeiro);
+    final critica = ordenadas.first;
+    // Complemento: se a leitura falhar, a tela segue sem convite e sem
+    // cartões de bairro.
+    final escolhidos = await _semFalhar(preferencias.lerBairrosEscolhidos);
+    final cartoes = _cartoesDosBairros(escolhidos ?? const [], avaliadas);
+    return InicioPronto(
+      estagioCidade: estagioMaisGrave([
+        for (final avaliada in avaliadas) avaliada.estagio,
+      ]),
+      leituras: leituras,
+      atualizadoEm: leituras
+          .map((l) => l.medidoEm)
+          .reduce((a, b) => a.isBefore(b) ? a : b),
+      consultadoEm: consultadoEm,
+      estacaoMaisCritica: critica.estacao,
+      leituraMaisCritica: critica.leitura,
+      estacoes: ordenadas,
+      semBairroEscolhido: escolhidos?.isEmpty ?? false,
+      bairros: cartoes,
+      maisCriticaForaDosBairros:
+          cartoes.isNotEmpty &&
+          !cartoes.any((cartao) => _contem(cartao, critica.estacao.codigo)),
+      boletim: boletim,
+      tabuaMare: tabuaMare,
+      semInternet: semInternet,
+    );
   }
 
   static const _mensagemErro =
