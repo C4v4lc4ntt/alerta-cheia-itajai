@@ -1,8 +1,8 @@
 // =============================================================================
 // discador_falso.dart — versão de DiscadorServico para os testes (RF05).
 //
-// Não abre o discador: anota os números pedidos e devolve o que o teste
-// escolher, para conferir o que cada toque da tela pediu.
+// Não abre nada: anota os números e as páginas pedidas e devolve o que o
+// teste escolher, para conferir o que cada toque da tela pediu.
 // =============================================================================
 import 'package:alerta_cheia_itajai/data/servicos/discador_servico.dart';
 
@@ -17,6 +17,15 @@ class DiscadorFalso implements DiscadorServico {
   @override
   Future<bool> ligar(String numero) async {
     numeros.add(numero);
+    return abre;
+  }
+
+  /// Páginas pedidas pelo [abrirSite], na ordem (RF06, ciclo 10).
+  final List<Uri> sites = [];
+
+  @override
+  Future<bool> abrirSite(Uri endereco) async {
+    sites.add(endereco);
     return abre;
   }
 }

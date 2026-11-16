@@ -1,13 +1,16 @@
 // =============================================================================
-// ajuda_view_test.dart — RF05 (D20): a aba Ajuda lista os contatos de
-// emergência e os abrigos, e liga com um toque.
+// ajuda_view_test.dart — RF05 e RF06 (D20): a aba Ajuda lista os contatos de
+// emergência, os abrigos e as orientações, liga com um toque e mostra o aviso
+// de "enchente sem chuva" (em destaque a partir de Atenção).
 //
 // Escrito ANTES do código (etapa vermelha do TDD).
 // Usa o catálogo real (página "Telefones de emergência" da Defesa Civil,
 // 15/11/2026) e o discador falso de test/apoio: nada abre de verdade.
 // =============================================================================
 import 'package:alerta_cheia_itajai/data/catalogo/catalogo_contatos.dart';
+import 'package:alerta_cheia_itajai/data/catalogo/catalogo_orientacoes.dart';
 import 'package:alerta_cheia_itajai/domain/models/abrigo.dart';
+import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
 import 'package:alerta_cheia_itajai/ui/ajuda/ajuda_view.dart';
 import 'package:alerta_cheia_itajai/ui/ajuda/ajuda_view_model.dart';
 import 'package:flutter/material.dart';
@@ -194,6 +197,105 @@ void main() {
 
       expect(find.text('Abrigos para animais'), findsOneWidget);
       expect(find.text('Rua Jorge Tzachel, 344 - Fazenda'), findsOneWidget);
+    });
+  });
+
+  group('orientações e aviso (ciclos 9 e 10, RF06)', () {
+    const aviso =
+        'Enchente sem chuva: em Itajaí, o rio pode continuar subindo mesmo '
+        'depois que a chuva para. Acompanhe o estágio no app e siga as '
+        'orientações da Defesa Civil.';
+    const destaque = Key('aviso_em_destaque');
+
+    Future<void> abrirComOrientacoes(
+      WidgetTester tester, {
+      EstagioAlerta? estagio,
+    }) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AjudaView(
+            viewModel: AjudaViewModel(discador: discador),
+            contatos: catalogoContatos,
+            orientacoes: catalogoOrientacoes,
+            estagioCidade: estagio,
+          ),
+        ),
+      );
+    }
+
+    // Mesmo motivo do grupo dos abrigos: o ListView só monta o que está
+    // perto da tela, então rola até o item antes de procurar.
+    Future<void> rolarAte(WidgetTester tester, Finder alvo) async {
+      await tester.scrollUntilVisible(
+        alvo,
+        200,
+        scrollable: find.byType(Scrollable),
+      );
+    }
+
+    testWidgets('mostra as 4 seções com o primeiro item de cada', (
+      tester,
+    ) async {
+      await abrirComOrientacoes(tester);
+
+      for (final secao in catalogoOrientacoes.entries) {
+        await rolarAte(tester, find.text(secao.value.first));
+
+        expect(find.text(secao.key), findsOneWidget);
+        expect(find.text(secao.value.first), findsOneWidget);
+      }
+    });
+
+    testWidgets('o aviso de enchente sem chuva aparece sempre', (tester) async {
+      await abrirComOrientacoes(tester, estagio: EstagioAlerta.monitoramento);
+
+      await rolarAte(tester, find.text(aviso));
+
+      expect(find.text(aviso), findsOneWidget);
+    });
+
+    testWidgets('Atenção → aviso em destaque, acima dos contatos', (
+      tester,
+    ) async {
+      await abrirComOrientacoes(tester, estagio: EstagioAlerta.atencao);
+
+      expect(find.byKey(destaque), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byKey(destaque)).dy,
+        lessThan(tester.getTopLeft(find.text('Defesa Civil')).dy),
+      );
+    });
+
+    testWidgets('Monitoramento → aviso sem destaque', (tester) async {
+      await abrirComOrientacoes(tester, estagio: EstagioAlerta.monitoramento);
+
+      await rolarAte(tester, find.text(aviso));
+
+      expect(find.byKey(destaque), findsNothing);
+    });
+
+    // Início ainda carregando ou com erro: sem estágio, sem destaque.
+    testWidgets('estágio desconhecido → aviso sem destaque', (tester) async {
+      await abrirComOrientacoes(tester);
+
+      await rolarAte(tester, find.text(aviso));
+
+      expect(find.byKey(destaque), findsNothing);
+    });
+
+    testWidgets('o botão das vias inundáveis abre o mapa oficial', (
+      tester,
+    ) async {
+      await abrirComOrientacoes(tester);
+      final botao = find.text(
+        'Ver as vias com risco de alagar no mapa da Defesa Civil',
+      );
+
+      await rolarAte(tester, botao);
+      await tester.tap(botao);
+      await tester.pump();
+
+      expect(discador.sites, [Uri.parse(linkViasInundaveis)]);
     });
   });
 }

@@ -47,5 +47,31 @@ void main() {
 
       expect(await discador.ligar('192'), isFalse);
     });
+
+    // RF06 (D20): o mesmo serviço abre a página oficial no navegador.
+    test('abrirSite abre a página e devolve true', () async {
+      final abertos = <Uri>[];
+      final discador = DiscadorServicoUrlLauncher(
+        abrir: (uri) async {
+          abertos.add(uri);
+          return true;
+        },
+      );
+      final pagina = Uri.parse('https://defesacivil.itajai.sc.gov.br/');
+
+      expect(await discador.abrirSite(pagina), isTrue);
+      expect(abertos, [pagina]);
+    });
+
+    test('abrirSite com exceção do plugin → devolve false', () async {
+      final discador = DiscadorServicoUrlLauncher(
+        abrir: (uri) async =>
+            throw PlatformException(code: 'ACTIVITY_NOT_FOUND'),
+      );
+
+      final pagina = Uri.parse('https://defesacivil.itajai.sc.gov.br/');
+
+      expect(await discador.abrirSite(pagina), isFalse);
+    });
   });
 }

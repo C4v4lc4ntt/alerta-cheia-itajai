@@ -5,6 +5,7 @@
 // Escrito ANTES do código (etapa vermelha do TDD).
 // O discador é a versão falsa de test/apoio: nada abre de verdade.
 // =============================================================================
+import 'package:alerta_cheia_itajai/data/catalogo/catalogo_orientacoes.dart';
 import 'package:alerta_cheia_itajai/ui/ajuda/ajuda_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -58,5 +59,15 @@ void main() {
 
       expect(viewModel.numeroParaDiscarAMao, isNull);
     });
+  });
+
+  // RF06 (D20, ciclo 10): o botão abre o mapa oficial de vias inundáveis.
+  test('abrirMapaDeVias abre a página oficial da Defesa Civil', () async {
+    final discador = DiscadorFalso();
+    final viewModel = AjudaViewModel(discador: discador);
+
+    await viewModel.abrirMapaDeVias();
+
+    expect(discador.sites, [Uri.parse(linkViasInundaveis)]);
   });
 }
