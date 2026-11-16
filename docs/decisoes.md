@@ -505,3 +505,29 @@ menos de cada vez sem esconder o caminho para o 199, o 193 e o 192.
 esconde as outras; tocar numa região mostra só os abrigos dela; "Animais" mostra os
 abrigos para animais; as orientações abrem em "Antes"; cada aba mostra só os seus
 itens; alvos de 48 px e rótulos no filtro.
+
+## D21 · Última consulta disponível sem internet (16/11/2026)
+**Contexto:** o CLAUDE.md (seção 7) pede que o último alerta fique disponível sem
+internet. Até o passo 56, se a busca no portal falhasse, a tela Início mostrava só a
+mensagem de erro, e o celular guardava apenas o último estágio, usado no aviso (D12).
+**Decisão:**
+- **O que guardar:** a cada consulta que dá certo, o app guarda no celular as leituras
+  das estações (código, nível e horário da medição), o boletim oficial (quando houver)
+  e a hora da consulta. Usa o `shared_preferences` que já está no projeto (D14), sem
+  pacote novo, num texto JSON. A tábua de marés fica de fora, porque é complemento e
+  é a mesma o mês inteiro.
+- **Quando mostrar:** se a busca dos níveis falhar e houver uma consulta guardada, a
+  tela Início mostra a guardada como se fosse a atual (estágio, cartões dos bairros e
+  boletim), com uma faixa no topo: "Sem internet · dados de DD/MM às HHhMM" e
+  "Confirme pelo 199". Sem nada guardado, continua a mensagem de erro de hoje.
+- **Validade:** a consulta guardada aparece sempre, sem prazo, com a data e a hora bem
+  visíveis. Esconder o dado depois de um prazo deixaria o morador sem nada justamente
+  quando a rede cai na cheia. A data e a hora, junto com o caminho para o 199, evitam
+  que um dado velho pareça atual.
+- **Falhas:** se não der para ler ou gravar a consulta guardada (dado corrompido ou
+  erro do armazenamento), o app segue como hoje: guardar não pode impedir a tela de
+  mostrar a consulta atual.
+**Testes:** escritos antes do código: salvar e ler a consulta no serviço (com e sem
+boletim, JSON inválido vira "nada guardado"); no ViewModel, a busca que dá certo
+guarda, a busca que falha mostra a guardada com a marca de "sem internet", e sem nada
+guardado mostra o erro; na tela, a faixa com a data, a hora e o 199.
