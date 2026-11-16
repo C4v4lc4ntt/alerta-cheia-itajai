@@ -8,7 +8,9 @@
 import 'package:flutter/material.dart';
 
 import 'core/tema/tema_app.dart';
+import 'data/catalogo/catalogo_contatos.dart';
 import 'ui/ajuda/ajuda_view.dart';
+import 'ui/ajuda/ajuda_view_model.dart';
 import 'ui/ajustes/ajustes_view.dart';
 import 'ui/ajustes/ajustes_view_model.dart';
 import 'ui/inicio/inicio_view.dart';
@@ -27,6 +29,7 @@ class AlertaCheiaApp extends StatelessWidget {
     super.key,
     required this.inicioViewModel,
     required this.ajustesViewModel,
+    required this.ajudaViewModel,
     this.criarMarcarPonto,
     this.criarMapa,
   });
@@ -36,6 +39,9 @@ class AlertaCheiaApp extends StatelessWidget {
 
   /// ViewModel entregue à tela Ajustes.
   final AjustesViewModel ajustesViewModel;
+
+  /// ViewModel entregue à aba Ajuda (RF05).
+  final AjudaViewModel ajudaViewModel;
 
   /// Repassado à aba Mapa (RF03, ciclo 23). É null quando o Firebase não
   /// ligou: o botão "Marcar rua alagada" aparece desativado.
@@ -55,6 +61,7 @@ class AlertaCheiaApp extends StatelessWidget {
       home: NavegacaoPrincipal(
         inicioViewModel: inicioViewModel,
         ajustesViewModel: ajustesViewModel,
+        ajudaViewModel: ajudaViewModel,
         criarMarcarPonto: criarMarcarPonto,
         criarMapa: criarMapa,
       ),
@@ -72,6 +79,7 @@ class NavegacaoPrincipal extends StatefulWidget {
     super.key,
     required this.inicioViewModel,
     required this.ajustesViewModel,
+    required this.ajudaViewModel,
     this.criarMarcarPonto,
     this.criarMapa,
   });
@@ -81,6 +89,9 @@ class NavegacaoPrincipal extends StatefulWidget {
 
   /// ViewModel entregue à tela Ajustes.
   final AjustesViewModel ajustesViewModel;
+
+  /// ViewModel entregue à aba Ajuda (RF05).
+  final AjudaViewModel ajudaViewModel;
 
   /// Repassado à aba Mapa; null quando o Firebase não ligou.
   final MarcarPontoViewModel Function()? criarMarcarPonto;
@@ -113,7 +124,8 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
         criarMarcarPonto: widget.criarMarcarPonto,
         criarMapa: widget.criarMapa,
       ),
-      const AjudaView(),
+      // RF05: a aba Ajuda recebe o ViewModel e os contatos do catálogo.
+      AjudaView(viewModel: widget.ajudaViewModel, contatos: catalogoContatos),
       AjustesView(viewModel: widget.ajustesViewModel),
     ];
 

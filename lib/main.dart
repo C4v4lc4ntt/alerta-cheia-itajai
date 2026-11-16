@@ -25,6 +25,7 @@ import 'data/repositorios/verificador_estagio.dart';
 import 'data/servicos/agendador_verificacao_local.dart';
 import 'data/servicos/boletim_servico_defesa_civil.dart';
 import 'data/servicos/criar_servico_de_nivel.dart';
+import 'data/servicos/discador_servico_url_launcher.dart';
 import 'data/servicos/iniciar_firebase.dart';
 import 'data/servicos/localizacao_servico_geolocator.dart';
 import 'data/servicos/notificador_servico_local.dart';
@@ -32,6 +33,7 @@ import 'data/servicos/pontos_servico_firestore.dart';
 import 'data/servicos/preferencias_servico_local.dart';
 import 'firebase_options.dart';
 import 'tarefa_verificacao.dart';
+import 'ui/ajuda/ajuda_view_model.dart';
 import 'ui/ajustes/ajustes_view_model.dart';
 import 'ui/inicio/inicio_view_model.dart';
 import 'ui/mapa/mapa_view_model.dart';
@@ -97,6 +99,8 @@ Future<void> main() async {
         ),
         catalogo: catalogoBairros,
       ),
+      // RF05 (D20): o discador de verdade, pelo url_launcher.
+      ajudaViewModel: AjudaViewModel(discador: DiscadorServicoUrlLauncher()),
       // RF03 (ciclo 23): cada abertura da tela de marcar ganha um ViewModel
       // novo, com o GPS e o Firestore de verdade. Com o Firebase desligado
       // vai null: chamar FirebaseFirestore.instance quebraria o app.
