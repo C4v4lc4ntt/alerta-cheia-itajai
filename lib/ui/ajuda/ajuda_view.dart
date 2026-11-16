@@ -11,8 +11,8 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/abrigo.dart';
 import '../../domain/models/contato_emergencia.dart';
-import '../comum/formatos.dart';
 import 'ajuda_view_model.dart';
+import 'cartoes_ajuda.dart';
 
 /// Tela da aba "Ajuda".
 class AjudaView extends StatelessWidget {
@@ -51,23 +51,23 @@ class AjudaView extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              if (numero != null) _AvisoDiscador(numero: numero),
+              if (numero != null) AvisoDiscador(numero: numero),
               for (final contato in contatos)
-                _CartaoContato(
+                CartaoContato(
                   contato: contato,
                   aoLigar: () => viewModel.ligar(contato.numero),
                 ),
               // A fonte não diz quais abrigos estão abertos (D20).
-              const _Titulo('Abrigos da Defesa Civil'),
+              const TituloSecao('Abrigos da Defesa Civil'),
               const Text(
                 'Os abrigos abrem conforme a necessidade. '
                 'Confirme pelo 199 antes de ir.',
               ),
               for (final regiao in abrigos.entries) ...[
-                _Titulo(regiao.key),
+                TituloSecao(regiao.key),
                 for (final abrigo in regiao.value) _cartaoAbrigo(abrigo),
               ],
-              const _Titulo('Abrigos para animais'),
+              const TituloSecao('Abrigos para animais'),
               for (final abrigo in abrigosAnimais) _cartaoAbrigo(abrigo),
             ],
           );
@@ -79,125 +79,9 @@ class AjudaView extends StatelessWidget {
   // Cartão do abrigo; o botão de ligar só existe quando há telefone.
   Widget _cartaoAbrigo(Abrigo abrigo) {
     final telefone = abrigo.telefone;
-    return _CartaoAbrigo(
+    return CartaoAbrigo(
       abrigo: abrigo,
       aoLigar: telefone == null ? null : () => viewModel.ligar(telefone),
-    );
-  }
-}
-
-/// Título de seção, anunciado como cabeçalho pelo leitor de tela.
-class _Titulo extends StatelessWidget {
-  const _Titulo(this.texto);
-
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
-      child: Semantics(
-        header: true,
-        child: Text(texto, style: Theme.of(context).textTheme.titleMedium),
-      ),
-    );
-  }
-}
-
-/// Cartão de um contato: nome, descrição e o botão com o número.
-class _CartaoContato extends StatelessWidget {
-  const _CartaoContato({required this.contato, required this.aoLigar});
-
-  final ContatoEmergencia contato;
-  final VoidCallback aoLigar;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(contato.nome, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(contato.descricao),
-            const SizedBox(height: 8),
-            FilledButton.icon(
-              onPressed: aoLigar,
-              icon: const Icon(Icons.phone),
-              // O leitor de tela anuncia "Ligar para Defesa Civil, 199".
-              label: Text(
-                contato.numero,
-                semanticsLabel: 'Ligar para ${contato.nome}, ${contato.numero}',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Cartão de um abrigo: nome, endereço e, se houver telefone, o botão.
-class _CartaoAbrigo extends StatelessWidget {
-  const _CartaoAbrigo({required this.abrigo, required this.aoLigar});
-
-  final Abrigo abrigo;
-
-  /// Nulo quando o abrigo não tem telefone: aí não há botão.
-  final VoidCallback? aoLigar;
-
-  @override
-  Widget build(BuildContext context) {
-    final telefone = abrigo.telefone;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(abrigo.nome, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 4),
-            Text(abrigo.endereco),
-            if (telefone != null) ...[
-              const SizedBox(height: 8),
-              FilledButton.tonalIcon(
-                onPressed: aoLigar,
-                icon: const Icon(Icons.phone),
-                label: Text(
-                  formatarTelefone(telefone),
-                  semanticsLabel:
-                      'Ligar para ${abrigo.nome}, '
-                      '${formatarTelefone(telefone)}',
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Aviso quando o discador não abriu (ex.: tablet sem telefone).
-class _AvisoDiscador extends StatelessWidget {
-  const _AvisoDiscador({required this.numero});
-
-  final String numero;
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = Theme.of(context).colorScheme;
-    return Card(
-      color: cores.errorContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          'Não foi possível abrir o discador. Disque $numero.',
-          style: TextStyle(color: cores.onErrorContainer),
-        ),
-      ),
     );
   }
 }
