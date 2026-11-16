@@ -16,6 +16,7 @@ import '../../domain/models/estagio_alerta.dart';
 import '../../domain/regras/aviso_enchente_sem_chuva.dart';
 import 'ajuda_view_model.dart';
 import 'cartoes_ajuda.dart';
+import 'cartoes_orientacoes.dart';
 
 /// Tela da aba "Ajuda".
 class AjudaView extends StatelessWidget {
