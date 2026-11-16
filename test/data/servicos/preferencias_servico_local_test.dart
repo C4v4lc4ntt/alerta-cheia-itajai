@@ -4,10 +4,15 @@
 //
 // Escrito ANTES do código (etapa vermelha do TDD). O armazenamento é trocado
 // por um mapa em memória, então o teste não depende do celular.
+// Passo 57 (D21), ETAPA VERMELHA: guardar e ler a última consulta que deu
+// certo, para a tela Início mostrar sem internet.
 // =============================================================================
 import 'package:alerta_cheia_itajai/data/servicos/preferencias_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/preferencias_servico_local.dart';
+import 'package:alerta_cheia_itajai/domain/models/boletim_oficial.dart';
+import 'package:alerta_cheia_itajai/domain/models/consulta_guardada.dart';
 import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
+import 'package:alerta_cheia_itajai/domain/models/leitura_nivel.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -115,6 +120,91 @@ void main() {
       armazem.dados['ultimo_estagio'] = 'normal';
 
       expect(await preferencias.lerUltimoEstagio(), isNull);
+    });
+  });
+
+  group('última consulta (D21, uso sem internet)', () {
+    // Leituras e boletim reais de 07/11/2026 (10:57 UTC = 07:57 em Brasília).
+    final as1057 = DateTime.utc(2026, 11, 7, 10, 57);
+    final as1100 = DateTime.utc(2026, 11, 7, 11);
+
+    ConsultaGuardada consulta({BoletimOficial? boletim}) => ConsultaGuardada(
+      leituras: [
+        LeituraNivel(codigoEstacao: 'DC01', nivel: 0.8, medidoEm: as1057),
+        LeituraNivel(codigoEstacao: 'DC07', nivel: 0.06, medidoEm: as1057),
+      ],
+      boletim: boletim,
+      consultadoEm: as1100,
+    );
+
+    final boletim = BoletimOficial(
+      codigo: 'normalidade',
+      situacao: 'Normalidade',
+      texto: 'Maré alta entre 13h e 15h.',
+      atualizadoEm: as1057,
+    );
+
+    test('sem consulta guardada → null', () async {
+      expect(await preferencias.lerUltimaConsulta(), isNull);
+    });
+
+    test('salvar e ler de volta: as leituras', () async {
+      await preferencias.salvarUltimaConsulta(consulta());
+
+      final lida = (await preferencias.lerUltimaConsulta())!;
+
+      expect(
+        [for (final l in lida.leituras) l.codigoEstacao],
+        ['DC01', 'DC07'],
+      );
+      expect([for (final l in lida.leituras) l.nivel], [0.8, 0.06]);
+      expect([for (final l in lida.leituras) l.medidoEm], [as1057, as1057]);
+    });
+
+    test('salvar e ler de volta: a hora da consulta', () async {
+      await preferencias.salvarUltimaConsulta(consulta());
+
+      expect((await preferencias.lerUltimaConsulta())!.consultadoEm, as1100);
+    });
+
+    test('salvar e ler de volta: o boletim oficial', () async {
+      await preferencias.salvarUltimaConsulta(consulta(boletim: boletim));
+
+      final lido = (await preferencias.lerUltimaConsulta())!.boletim!;
+
+      expect(lido.codigo, 'normalidade');
+      expect(lido.situacao, 'Normalidade');
+      expect(lido.texto, 'Maré alta entre 13h e 15h.');
+      expect(lido.atualizadoEm, as1057);
+    });
+
+    test('consulta sem boletim → volta sem boletim', () async {
+      await preferencias.salvarUltimaConsulta(consulta());
+
+      expect((await preferencias.lerUltimaConsulta())!.boletim, isNull);
+    });
+
+    test('salvar de novo substitui a consulta anterior', () async {
+      await preferencias.salvarUltimaConsulta(consulta(boletim: boletim));
+
+      await preferencias.salvarUltimaConsulta(consulta());
+
+      expect((await preferencias.lerUltimaConsulta())!.boletim, isNull);
+    });
+
+    // D21: dado corrompido não pode derrubar a tela; vira "nada guardado".
+    final invalidos = {
+      'texto que não é JSON': 'não é json',
+      'JSON sem as leituras': '{"consultadoEm": "2026-11-07T11:00:00.000Z"}',
+      'data inválida':
+          '{"consultadoEm": "ontem", "leituras": [], "boletim": null}',
+    };
+    invalidos.forEach((caso, texto) {
+      test('$caso → null', () async {
+        armazem.dados['ultima_consulta'] = texto;
+
+        expect(await preferencias.lerUltimaConsulta(), isNull);
+      });
     });
   });
 }
