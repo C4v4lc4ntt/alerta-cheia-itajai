@@ -10,6 +10,7 @@ import 'package:alerta_cheia_itajai/ui/ajustes/ajustes_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../apoio/acessibilidade.dart';
 import '../../apoio/agendador_falso.dart';
 import '../../apoio/notificador_falso.dart';
 import '../../apoio/preferencias_falsas.dart';
@@ -45,9 +46,12 @@ void main() {
     );
   });
 
-  Future<void> abrirTela(WidgetTester tester) async {
+  Future<void> abrirTela(WidgetTester tester, {ThemeData? tema}) async {
     await tester.pumpWidget(
-      MaterialApp(home: AjustesView(viewModel: viewModel)),
+      MaterialApp(
+        theme: tema,
+        home: AjustesView(viewModel: viewModel),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -193,5 +197,19 @@ void main() {
     await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
     semantica.dispose();
+  });
+
+  // Passo 57 · CLAUDE.md, seção 7: 48 px, rótulos e contraste de 4,5:1, nos
+  // dois temas do app.
+  group('acessibilidade', () {
+    temasDoApp.forEach((nome, tema) {
+      testWidgets('tema $nome', (tester) async {
+        final semantica = tester.ensureSemantics();
+        await abrirTela(tester, tema: tema());
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+      });
+    });
   });
 }

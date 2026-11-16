@@ -6,6 +6,8 @@
 // tela é testada do jeito que o morador a vê, sem internet.
 // Passo 56: os testes de itens do fim da tela rolam até eles antes de
 // procurar, para não dependerem da altura da tela (o visual novo é mais alto).
+// Passo 57, ETAPA VERMELHA: a faixa "Sem internet" com a hora da consulta
+// guardada (D21) e as regras de acessibilidade nos temas claro e escuro.
 // =============================================================================
 import 'dart:async';
 
@@ -14,6 +16,7 @@ import 'package:alerta_cheia_itajai/data/servicos/boletim_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/nivel_rio_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/portal_defesa_civil.dart';
 import 'package:alerta_cheia_itajai/domain/models/boletim_oficial.dart';
+import 'package:alerta_cheia_itajai/domain/models/consulta_guardada.dart';
 import 'package:alerta_cheia_itajai/domain/models/leitura_nivel.dart';
 import 'package:alerta_cheia_itajai/domain/models/tabua_mare.dart';
 import 'package:alerta_cheia_itajai/ui/inicio/inicio_view.dart';
@@ -22,6 +25,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../apoio/acessibilidade.dart';
 import '../../apoio/preferencias_falsas.dart';
 
 class NivelRioServicoMock extends Mock implements NivelRioServico {}
@@ -72,16 +76,22 @@ void main() {
     WidgetTester tester, {
     List<String> bairros = const ['Murta'],
     VoidCallback? aoEscolherBairro,
+    ConsultaGuardada? guardada,
+    ThemeData? tema,
   }) async {
     final viewModel = InicioViewModel(
       niveis: niveis,
       boletins: boletins,
-      preferencias: PreferenciasFalsas(bairros: bairros),
+      preferencias: PreferenciasFalsas(
+        bairros: bairros,
+        ultimaConsulta: guardada,
+      ),
       verificar: () async {},
       agora: () => as2145,
     );
     await tester.pumpWidget(
       MaterialApp(
+        theme: tema,
         home: InicioView(
           viewModel: viewModel,
           aoEscolherBairro: aoEscolherBairro ?? () {},
@@ -457,6 +467,96 @@ void main() {
         find.text('Sem leitura das estações próximas agora.'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('sem internet (D21)', () {
+    // Consulta guardada às 21:00 UTC = 18:00 em Brasília.
+    final guardada = ConsultaGuardada(
+      leituras: leiturasNormais,
+      consultadoEm: DateTime.utc(2026, 10, 26, 21),
+    );
+
+    void portalForaDoAr() {
+      when(() => niveis.buscarLeituras())
+          .thenAnswer((_) async => throw PortalIndisponivel(503));
+    }
+
+    testWidgets('mostra a faixa com a data e a hora da consulta guardada', (
+      tester,
+    ) async {
+      portalForaDoAr();
+
+      await abrirTela(tester, guardada: guardada);
+
+      expect(
+        find.text('Sem internet · dados de 26/10 às 18:00'),
+        findsOneWidget,
+      );
+    });
+
+    // O app é complemento: dado velho sempre com o caminho para o 199.
+    testWidgets('a faixa pede para confirmar pelo 199', (tester) async {
+      portalForaDoAr();
+
+      await abrirTela(tester, guardada: guardada);
+
+      expect(find.textContaining('Confirme pelo 199'), findsOneWidget);
+    });
+
+    testWidgets('sem internet → não mostra a mensagem de erro', (tester) async {
+      portalForaDoAr();
+
+      await abrirTela(tester, guardada: guardada);
+
+      expect(find.textContaining('Não foi possível obter'), findsNothing);
+    });
+
+    testWidgets('com internet → sem a faixa', (tester) async {
+      await abrirTela(tester, guardada: guardada);
+
+      expect(find.textContaining('Sem internet'), findsNothing);
+    });
+  });
+
+  // CLAUDE.md, seção 7: 48 px, rótulos e contraste de 4,5:1, nos dois temas.
+  group('acessibilidade', () {
+    temasDoApp.forEach((nome, tema) {
+      testWidgets('tela Início no tema $nome', (tester) async {
+        final semantica = tester.ensureSemantics();
+
+        await abrirTela(tester, tema: tema());
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+      });
+
+      testWidgets('faixa "Sem internet" no tema $nome', (tester) async {
+        final semantica = tester.ensureSemantics();
+        when(() => niveis.buscarLeituras())
+            .thenAnswer((_) async => throw PortalIndisponivel(503));
+
+        await abrirTela(
+          tester,
+          tema: tema(),
+          guardada: ConsultaGuardada(
+            leituras: leiturasNormais,
+            consultadoEm: DateTime.utc(2026, 10, 26, 21),
+          ),
+        );
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+      });
+
+      testWidgets('convite para escolher bairro no tema $nome', (tester) async {
+        final semantica = tester.ensureSemantics();
+
+        await abrirTela(tester, tema: tema(), bairros: const []);
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+      });
     });
   });
 }

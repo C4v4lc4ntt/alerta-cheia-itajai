@@ -16,6 +16,7 @@ import 'package:alerta_cheia_itajai/ui/marcar_ponto/marcar_ponto_view_model.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../apoio/acessibilidade.dart';
 import '../../apoio/localizacao_servico_falso.dart';
 import '../../apoio/pontos_servico_falso.dart';
 
@@ -78,9 +79,12 @@ void main() {
   });
 
   // Abre a tela e espera a leitura falsa terminar.
-  Future<void> abrirTela(WidgetTester tester) async {
+  Future<void> abrirTela(WidgetTester tester, {ThemeData? tema}) async {
     await tester.pumpWidget(
-      MaterialApp(home: MarcarPontoView(viewModel: viewModel)),
+      MaterialApp(
+        theme: tema,
+        home: MarcarPontoView(viewModel: viewModel),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -419,5 +423,19 @@ void main() {
 
     await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+  });
+
+  // Passo 57 · CLAUDE.md, seção 7: 48 px, rótulos e contraste de 4,5:1, nos
+  // dois temas do app.
+  group('acessibilidade', () {
+    temasDoApp.forEach((nome, tema) {
+      testWidgets('tema $nome', (tester) async {
+        final semantica = tester.ensureSemantics();
+        await abrirTela(tester, tema: tema());
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+      });
+    });
   });
 }

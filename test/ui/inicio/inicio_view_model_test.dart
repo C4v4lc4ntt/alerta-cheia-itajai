@@ -4,6 +4,8 @@
 // ETAPA VERMELHA: o ViewModel ainda não existe, então este teste nem compila.
 // Os serviços (borda do app) viram mocks do mocktail; as regras do domínio
 // (classificar e estágio mais grave) rodam de verdade (CLAUDE.md).
+// Passo 57 (D21), ETAPA VERMELHA: a consulta que dá certo fica guardada, e a
+// que falha mostra a guardada, marcada como "sem internet".
 // =============================================================================
 import 'dart:async';
 
@@ -11,6 +13,7 @@ import 'package:alerta_cheia_itajai/data/servicos/boletim_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/nivel_rio_servico.dart';
 import 'package:alerta_cheia_itajai/data/servicos/portal_defesa_civil.dart';
 import 'package:alerta_cheia_itajai/domain/models/boletim_oficial.dart';
+import 'package:alerta_cheia_itajai/domain/models/consulta_guardada.dart';
 import 'package:alerta_cheia_itajai/domain/models/estagio_alerta.dart';
 import 'package:alerta_cheia_itajai/domain/models/leitura_nivel.dart';
 import 'package:alerta_cheia_itajai/domain/models/tabua_mare.dart';
@@ -29,6 +32,24 @@ class _PreferenciasQueFalham extends PreferenciasFalsas {
   @override
   Future<List<String>> lerBairrosEscolhidos() async {
     throw StateError('Falha simulada ao ler os bairros.');
+  }
+}
+
+// Simula a falha ao gravar a consulta no celular (D21).
+class _PreferenciasQueNaoGravam extends PreferenciasFalsas {
+  _PreferenciasQueNaoGravam() : super(bairros: ['Murta']);
+
+  @override
+  Future<void> salvarUltimaConsulta(ConsultaGuardada consulta) async {
+    throw StateError('Falha simulada ao gravar a consulta.');
+  }
+}
+
+// Simula a falha ao ler a consulta guardada (D21).
+class _PreferenciasQueNaoLeemAConsulta extends PreferenciasFalsas {
+  @override
+  Future<ConsultaGuardada?> lerUltimaConsulta() async {
+    throw StateError('Falha simulada ao ler a consulta.');
   }
 }
 
@@ -404,6 +425,134 @@ void main() {
       await viewModel.carregar();
 
       expect((viewModel.estado as InicioPronto).bairros, isEmpty);
+    });
+  });
+
+  group('sem internet (D21)', () {
+    final as2145 = DateTime.utc(2026, 10, 26, 21, 45);
+    final as2100 = DateTime.utc(2026, 10, 26, 21);
+
+    // Consulta guardada antes de a rede cair: DC09 na cota de Alerta
+    // (1,42 m, catálogo), para dar para ver que o estágio veio dela.
+    final guardada = ConsultaGuardada(
+      leituras: [
+        LeituraNivel(codigoEstacao: 'DC09', nivel: 1.42, medidoEm: as2100),
+      ],
+      boletim: boletim,
+      consultadoEm: as2100,
+    );
+
+    InicioViewModel criar(PreferenciasFalsas preferencias) => InicioViewModel(
+      niveis: niveis,
+      boletins: boletins,
+      preferencias: preferencias,
+      verificar: () async {},
+      agora: () => as2145,
+    );
+
+    void portalForaDoAr() {
+      when(() => niveis.buscarLeituras())
+          .thenAnswer((_) async => throw PortalIndisponivel(503));
+    }
+
+    test('consulta que dá certo → guarda as leituras', () async {
+      final preferencias = PreferenciasFalsas(bairros: ['Murta']);
+
+      await criar(preferencias).carregar();
+
+      expect(preferencias.ultimaConsulta!.leituras, leiturasNormais);
+    });
+
+    test('consulta que dá certo → guarda o boletim e a hora', () async {
+      final preferencias = PreferenciasFalsas(bairros: ['Murta']);
+
+      await criar(preferencias).carregar();
+
+      expect(preferencias.ultimaConsulta!.boletim, same(boletim));
+      expect(preferencias.ultimaConsulta!.consultadoEm, as2145);
+    });
+
+    test('consulta que dá certo → não marca "sem internet"', () async {
+      final viewModel = criar(PreferenciasFalsas(bairros: ['Murta']));
+
+      await viewModel.carregar();
+
+      expect((viewModel.estado as InicioPronto).semInternet, isFalse);
+    });
+
+    test('falha ao gravar não impede mostrar a consulta atual', () async {
+      final viewModel = criar(_PreferenciasQueNaoGravam());
+
+      await viewModel.carregar();
+
+      expect(viewModel.estado, isA<InicioPronto>());
+    });
+
+    test(
+      'portal fora do ar com consulta guardada → mostra a guardada',
+      () async {
+        portalForaDoAr();
+        final viewModel = criar(PreferenciasFalsas(ultimaConsulta: guardada));
+
+        await viewModel.carregar();
+
+        final pronto = viewModel.estado as InicioPronto;
+        expect(pronto.semInternet, isTrue);
+        expect(pronto.estagioCidade, EstagioAlerta.alerta);
+        expect(pronto.estacaoMaisCritica.codigo, 'DC09');
+      },
+    );
+
+    // A faixa mostra a hora da guardada, não a de agora (D21).
+    test('sem internet → a hora é a da consulta guardada', () async {
+      portalForaDoAr();
+      final viewModel = criar(PreferenciasFalsas(ultimaConsulta: guardada));
+
+      await viewModel.carregar();
+
+      expect((viewModel.estado as InicioPronto).consultadoEm, as2100);
+    });
+
+    test('sem internet → boletim guardado e sem tábua de marés', () async {
+      portalForaDoAr();
+      final viewModel = criar(PreferenciasFalsas(ultimaConsulta: guardada));
+
+      await viewModel.carregar();
+
+      final pronto = viewModel.estado as InicioPronto;
+      expect(pronto.boletim, same(boletim));
+      expect(pronto.tabuaMare, isNull);
+    });
+
+    test('sem internet → os cartões dos bairros usam a guardada', () async {
+      portalForaDoAr();
+      // Murta usa a DC02 e a DC09; só a DC09 está na consulta guardada.
+      final viewModel = criar(
+        PreferenciasFalsas(bairros: ['Murta'], ultimaConsulta: guardada),
+      );
+
+      await viewModel.carregar();
+
+      final cartao = (viewModel.estado as InicioPronto).bairros.single;
+      expect([for (final e in cartao.estacoes) e.estacao.codigo], ['DC09']);
+    });
+
+    test('portal fora do ar sem consulta guardada → erro', () async {
+      portalForaDoAr();
+      final viewModel = criar(PreferenciasFalsas());
+
+      await viewModel.carregar();
+
+      expect(viewModel.estado, isA<InicioErro>());
+    });
+
+    test('portal fora do ar e falha ao ler a guardada → erro', () async {
+      portalForaDoAr();
+      final viewModel = criar(_PreferenciasQueNaoLeemAConsulta());
+
+      await viewModel.carregar();
+
+      expect(viewModel.estado, isA<InicioErro>());
     });
   });
 }

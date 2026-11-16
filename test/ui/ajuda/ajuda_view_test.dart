@@ -18,6 +18,7 @@ import 'package:alerta_cheia_itajai/ui/ajuda/ajuda_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../apoio/acessibilidade.dart';
 import '../../apoio/discador_falso.dart';
 
 void main() {
@@ -34,9 +35,10 @@ void main() {
   }
 
   // Monta a aba Ajuda sozinha, com o ViewModel de verdade.
-  Future<void> abrirTela(WidgetTester tester) async {
+  Future<void> abrirTela(WidgetTester tester, {ThemeData? tema}) async {
     await tester.pumpWidget(
       MaterialApp(
+        theme: tema,
         home: AjudaView(
           viewModel: AjudaViewModel(discador: discador),
           contatos: catalogoContatos,
@@ -364,6 +366,21 @@ void main() {
       await tester.pump();
 
       expect(discador.sites, [Uri.parse(linkViasInundaveis)]);
+    });
+  });
+
+  // Passo 57 · CLAUDE.md, seção 7: 48 px, rótulos e contraste de 4,5:1, nos
+  // dois temas do app.
+  group('acessibilidade', () {
+    temasDoApp.forEach((nome, tema) {
+      testWidgets('tema $nome', (tester) async {
+        final semantica = tester.ensureSemantics();
+        await abrirTela(tester, tema: tema());
+        await tester.pumpAndSettle();
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+      });
     });
   });
 }

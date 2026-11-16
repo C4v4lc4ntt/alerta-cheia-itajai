@@ -10,6 +10,8 @@
 // No RF04, a MapaView também recebe como criar o MapaViewModel (criarMapa);
 // null = Firebase desligado, e a aba fica como no RF03, sem mapa vazio que
 // pareça "nenhuma rua alagada" (decisão de 15/11).
+// Passo 57: as regras de acessibilidade nos temas claro e escuro, com e sem
+// o Firebase e com o mapa aberto.
 // =============================================================================
 import 'package:alerta_cheia_itajai/data/catalogo/area_itajai.dart';
 import 'package:alerta_cheia_itajai/domain/models/leitura_localizacao.dart';
@@ -21,6 +23,7 @@ import 'package:alerta_cheia_itajai/ui/marcar_ponto/marcar_ponto_view_model.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../apoio/acessibilidade.dart';
 import '../../apoio/localizacao_servico_falso.dart';
 import '../../apoio/pontos_servico_falso.dart';
 
@@ -57,9 +60,13 @@ void main() {
   Future<void> abrirMapa(
     WidgetTester tester, {
     MarcarPontoViewModel Function()? criar,
+    ThemeData? tema,
   }) async {
     await tester.pumpWidget(
-      MaterialApp(home: MapaView(criarMarcarPonto: criar)),
+      MaterialApp(
+        theme: tema,
+        home: MapaView(criarMarcarPonto: criar),
+      ),
     );
   }
 
@@ -149,9 +156,10 @@ void main() {
     );
 
     // Abre a aba com o mapa, sem ladrilhos (sem internet, D19).
-    Future<void> abrirComMapa(WidgetTester tester) async {
+    Future<void> abrirComMapa(WidgetTester tester, {ThemeData? tema}) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: tema,
           home: MapaView(
             criarMarcarPonto: criarMarcarPonto,
             criarMapa: criarMapa,
@@ -197,6 +205,41 @@ void main() {
       await abrirMapa(tester);
 
       expect(find.byType(MapaDePontos), findsNothing);
+    });
+
+    temasDoApp.forEach((nome, tema) {
+      testWidgets('acessibilidade com o mapa aberto no tema $nome', (
+        tester,
+      ) async {
+        final semantica = tester.ensureSemantics();
+        await abrirComMapa(tester, tema: tema());
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+        await sairDaAba(tester);
+      });
+    });
+  });
+
+  // CLAUDE.md, seção 7: 48 px, rótulos e contraste de 4,5:1, nos dois temas.
+  group('acessibilidade', () {
+    temasDoApp.forEach((nome, tema) {
+      testWidgets('Firebase ligado no tema $nome', (tester) async {
+        final semantica = tester.ensureSemantics();
+        await abrirMapa(tester, criar: criarMarcarPonto, tema: tema());
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+      });
+
+      // O aviso de Firebase desligado também precisa ser legível.
+      testWidgets('Firebase desligado no tema $nome', (tester) async {
+        final semantica = tester.ensureSemantics();
+        await abrirMapa(tester, tema: tema());
+
+        await conferirAcessibilidade(tester);
+        semantica.dispose();
+      });
     });
   });
 }

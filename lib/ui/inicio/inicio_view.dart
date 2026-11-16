@@ -7,6 +7,8 @@
 // estágio ao lado de cada estação, a estação mais grave num cartão com ícone
 // e o botão da tábua ocupando a largura. Os textos e o comportamento não
 // mudam.
+// Passo 57 (D21), ETAPA VERDE: a faixa "Sem internet" no topo quando a tela
+// mostra a última consulta guardada.
 // =============================================================================
 import 'package:flutter/material.dart';
 
@@ -16,6 +18,7 @@ import '../comum/indicador_estagio.dart';
 import 'cartao_bairro.dart';
 import 'cartao_mais_grave.dart';
 import 'cartao_oficial.dart';
+import 'faixa_sem_internet.dart';
 import 'inicio_view_model.dart';
 import 'tabua_mare_view.dart';
 
@@ -159,6 +162,12 @@ class _Pronto extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
+          // D21: sem internet, avisa no topo que os dados são da consulta
+          // guardada, com a data e a hora.
+          if (estado.semInternet) ...[
+            FaixaSemInternet(consultadoEm: estado.consultadoEm),
+            const SizedBox(height: 12),
+          ],
           // D16: a situação oficial em destaque.
           CartaoOficial(boletim: boletim, estagioCidade: estado.estagioCidade),
           const SizedBox(height: 12),
