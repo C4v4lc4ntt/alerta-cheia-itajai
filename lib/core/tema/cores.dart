@@ -4,6 +4,8 @@
 // Centralizar as cores aqui evita "números mágicos" espalhados pelas telas:
 // se uma cor mudar, muda em um lugar só.
 // Formato Color(0xAARRGGBB): "FF" no começo = 100% opaco, depois o hex do mockup.
+// Passo 56 (REFATORAR, visual novo): entram as cores de superfície, borda e
+// texto secundário do mockup "sério e confiável". Os estágios não mudam.
 // =============================================================================
 import 'package:flutter/material.dart';
 
@@ -17,6 +19,18 @@ abstract final class CoresApp {
   static const Color fundo = Color(0xFFF3F5F4);
   static const Color texto = Color(0xFF0F1E2A);
   static const Color principal = Color(0xFF0A5C73); // azul-petróleo
+
+  // --- Superfícies do visual novo (passo 56) -----------------------------
+  // Cartões brancos com borda fina sobre o fundo cinza-esverdeado.
+  static const Color superficie = Color(0xFFFFFFFF);
+  static const Color superficieVariante = Color(0xFFE8EEEC);
+  static const Color borda = Color(0xFFD6DEDB);
+  // Texto de apoio: contraste de ~6,9:1 sobre o branco e ~6,3:1 sobre o fundo.
+  static const Color textoSecundario = Color(0xFF4A5A66);
+  // Fundo do item escolhido (navegação, filtros); texto em CoresApp.principal.
+  static const Color principalSuave = Color(0xFFDCEBEF);
+  // Texto claro do cabeçalho azul (contraste de ~5,4:1 sobre o principal).
+  static const Color cabecalhoSecundario = Color(0xFFCFE3E9);
 
   // --- Estágios de alerta (RF01) -----------------------------------------
   // Todas têm contraste suficiente (≥ 4,5:1) com texto BRANCO por cima.
