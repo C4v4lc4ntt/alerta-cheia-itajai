@@ -20,8 +20,8 @@ Em Itajaí a informação sobre cheias está espalhada: o SMS 40199 e o cell bro
 | RF02 | Escolha de bairros, notificação quando o estágio **muda** (também com o app fechado, no Android) e situação oficial da Defesa Civil em destaque | ✅ Concluído |
 | RF03 | Marcar ponto de alagamento (local pelo GPS e altura da água), sem login nem identificação | ✅ Concluído |
 | RF04 | Mapa dos pontos ativos em tempo real, centralizado pelo GPS ou em Itajaí (somem 6 h após a criação ou com 3 "já baixou") | ✅ Concluído |
-| RF05 | Abrigos e contatos de emergência com ligação em um toque | 🔜 Sprint 4 |
-| RF06 | Orientações antes/durante/depois e aviso de "enchente sem chuva" | 🔜 Sprint 4 |
+| RF05 | Contatos de emergência (199, 193, 192) e 34 abrigos da Defesa Civil por região, com ligação em um toque | ✅ Concluído |
+| RF06 | Orientações antes/durante/depois e de veículos, aviso de "enchente sem chuva" (em destaque a partir de Atenção) e link para o mapa de vias inundáveis | ✅ Concluído |
 
 Requisitos não funcionais: funciona sem internet com o último alerta salvo, não pede nome nem documento (LGPD), segue boas práticas de acessibilidade e mantém **≥ 80% de cobertura de testes na lógica**.
 
@@ -49,7 +49,7 @@ O CI (GitHub Actions) roda formatação, análise estática, todos os testes e a
 
 ## Stack
 
-Flutter/Dart · flutter_test · integration_test · mocktail · http · Firebase Firestore (plano gratuito) · notificações locais · flutter_map + OpenStreetMap · GitHub Actions
+Flutter/Dart · flutter_test · integration_test · mocktail · http · Firebase Firestore (plano gratuito) · notificações locais · flutter_map + OpenStreetMap · url_launcher · GitHub Actions
 
 ## Como rodar
 

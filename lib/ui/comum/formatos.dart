@@ -62,3 +62,12 @@ String rotuloDaAltura(AlturaAgua altura) => switch (altura) {
   AlturaAgua.joelho => 'Joelho · 20 a 50 cm',
   AlturaAgua.cintura => 'Cintura · mais de 50 cm',
 };
+
+/// Telefone com DDD no formato brasileiro (RF05, D20): "4733411408" →
+/// "(47) 3341-1408" e "47996951115" → "(47) 99695-1115". O hífen fica antes
+/// dos últimos 4 dígitos, então a mesma conta serve para fixo e celular.
+String formatarTelefone(String numero) {
+  final corte = numero.length - 4;
+  return '(${numero.substring(0, 2)}) ${numero.substring(2, corte)}-'
+      '${numero.substring(corte)}';
+}

@@ -103,4 +103,18 @@ void main() {
       );
     });
   });
+
+  // RF05 (D20): o catálogo guarda só dígitos (vão no "tel:"); a tela mostra o
+  // número no formato brasileiro. Telefones reais da camada de abrigos.
+  group('formatarTelefone (DDD entre parênteses e hífen)', () {
+    const casos = {
+      '4733411408': '(47) 3341-1408', // fixo, 10 dígitos
+      '47996951115': '(47) 99695-1115', // celular, 11 dígitos
+    };
+    casos.forEach((numero, texto) {
+      test('$numero → $texto', () {
+        expect(formatarTelefone(numero), texto);
+      });
+    });
+  });
 }
