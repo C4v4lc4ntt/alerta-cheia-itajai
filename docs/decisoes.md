@@ -475,8 +475,11 @@ discador do celular.
   Inundáveis" do portal. É uma projeção ao vivo (7.212 vias, nenhuma marcada em
   15/11/2026), por isso o app aponta para ela e não copia os dados.
 - **"Enchente sem chuva" (RF06):** o aviso fica sempre visível na aba Ajuda e em
-  destaque quando o estágio em destaque da cidade (D16) for Atenção ou mais grave.
-  Regra pura em `domain/regras`. Fonte: NSC Total, "Fenômeno da 'enchente sem chuva'
+  destaque (no topo da aba) quando o estágio mais grave entre as estações
+  (`estagioCidade`, o mesmo da notificação) for Atenção ou mais grave; sem
+  leituras, fica sem destaque. Escolhido em vez do boletim oficial (D16) por ser
+  mais cauteloso: as estações sobem antes do boletim. Regra pura em
+  `domain/regras`. Fonte: NSC Total, "Fenômeno da 'enchente sem chuva'
   é ameaça em Itajaí" (2023), já citada no relatório da Etapa 1.
 - **Firebase desligado no RF04:** registrado como adendo da D18.
 **Descartadas:** código nativo em Kotlin e Swift (platform channel) para abrir o

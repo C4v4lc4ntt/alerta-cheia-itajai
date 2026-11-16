@@ -57,3 +57,16 @@ const Map<String, List<String>> catalogoOrientacoes = {
         'bloqueio.',
   ],
 };
+
+/// Página "Projeção de Vias Inundáveis" do portal da Defesa Civil (D20): uma
+/// projeção ao vivo, então o app abre a página em vez de copiar os dados.
+const String linkViasInundaveis =
+    'https://defesacivil.itajai.sc.gov.br/vias-suscetiveis-inundacoes';
+
+/// Aviso de "enchente sem chuva" (RF06, D20), aprovado em 15/11/2026. Fonte
+/// do fenômeno: NSC Total, "Fenômeno da 'enchente sem chuva' é ameaça em
+/// Itajaí" (2023).
+const String textoAvisoEnchenteSemChuva =
+    'Enchente sem chuva: em Itajaí, o rio pode continuar subindo mesmo '
+    'depois que a chuva para. Acompanhe o estágio no app e siga as '
+    'orientações da Defesa Civil.';

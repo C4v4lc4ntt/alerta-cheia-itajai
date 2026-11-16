@@ -8,6 +8,7 @@
 // =============================================================================
 import 'package:flutter/foundation.dart';
 
+import '../../data/catalogo/catalogo_orientacoes.dart';
 import '../../data/servicos/discador_servico.dart';
 
 /// Estado da aba Ajuda.
@@ -30,5 +31,10 @@ class AjudaViewModel extends ChangeNotifier {
     final abriu = await _discador.ligar(numero);
     _numeroParaDiscarAMao = abriu ? null : numero;
     notifyListeners();
+  }
+
+  /// Abre no navegador o mapa oficial de vias inundáveis (RF06, ciclo 10).
+  Future<void> abrirMapaDeVias() async {
+    await _discador.abrirSite(Uri.parse(linkViasInundaveis));
   }
 }

@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'core/tema/tema_app.dart';
 import 'data/catalogo/catalogo_abrigos.dart';
 import 'data/catalogo/catalogo_contatos.dart';
+import 'data/catalogo/catalogo_orientacoes.dart';
 import 'ui/ajuda/ajuda_view.dart';
 import 'ui/ajuda/ajuda_view_model.dart';
 import 'ui/ajustes/ajustes_view.dart';
@@ -125,12 +126,22 @@ class _NavegacaoPrincipalState extends State<NavegacaoPrincipal> {
         criarMarcarPonto: widget.criarMarcarPonto,
         criarMapa: widget.criarMapa,
       ),
-      // RF05: a aba Ajuda recebe o ViewModel e os catálogos (D20).
-      AjudaView(
-        viewModel: widget.ajudaViewModel,
-        contatos: catalogoContatos,
-        abrigos: catalogoAbrigos,
-        abrigosAnimais: catalogoAbrigosAnimais,
+      // RF05 e RF06: a aba Ajuda recebe o ViewModel e os catálogos (D20).
+      // O ListenableBuilder redesenha a aba quando a tela Início atualiza o
+      // estágio, que liga o destaque do aviso de "enchente sem chuva".
+      ListenableBuilder(
+        listenable: widget.inicioViewModel,
+        builder: (context, _) => AjudaView(
+          viewModel: widget.ajudaViewModel,
+          contatos: catalogoContatos,
+          abrigos: catalogoAbrigos,
+          abrigosAnimais: catalogoAbrigosAnimais,
+          orientacoes: catalogoOrientacoes,
+          estagioCidade: switch (widget.inicioViewModel.estado) {
+            InicioPronto(:final estagioCidade) => estagioCidade,
+            _ => null,
+          },
+        ),
       ),
       AjustesView(viewModel: widget.ajustesViewModel),
     ];

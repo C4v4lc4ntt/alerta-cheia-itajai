@@ -224,13 +224,17 @@ void main() {
     }
 
     // Mesmo motivo do grupo dos abrigos: o ListView só monta o que está
-    // perto da tela, então rola até o item antes de procurar.
+    // perto da tela, então rola até o item antes de procurar. O
+    // scrollUntilVisible para quando o item aparece só em parte; o
+    // ensureVisible termina de trazê-lo para a tela, para o toque acertar.
     Future<void> rolarAte(WidgetTester tester, Finder alvo) async {
       await tester.scrollUntilVisible(
         alvo,
         200,
         scrollable: find.byType(Scrollable),
       );
+      await tester.ensureVisible(alvo);
+      await tester.pump();
     }
 
     testWidgets('mostra as 4 seções com o primeiro item de cada', (
@@ -239,7 +243,8 @@ void main() {
       await abrirComOrientacoes(tester);
 
       for (final secao in catalogoOrientacoes.entries) {
-        await rolarAte(tester, find.text(secao.value.first));
+        // Rola até o título: o primeiro item vem logo abaixo dele.
+        await rolarAte(tester, find.text(secao.key));
 
         expect(find.text(secao.key), findsOneWidget);
         expect(find.text(secao.value.first), findsOneWidget);
