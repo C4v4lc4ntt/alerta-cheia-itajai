@@ -518,7 +518,7 @@ mensagem de erro, e o celular guardava apenas o último estágio, usado no aviso
   é a mesma o mês inteiro.
 - **Quando mostrar:** se a busca dos níveis falhar e houver uma consulta guardada, a
   tela Início mostra a guardada como se fosse a atual (estágio, cartões dos bairros e
-  boletim), com uma faixa no topo: "Sem internet · dados de DD/MM às HHhMM" e
+  boletim), com uma faixa no topo: "Sem internet · dados de DD/MM às HH:MM" e
   "Confirme pelo 199". Sem nada guardado, continua a mensagem de erro de hoje.
 - **Validade:** a consulta guardada aparece sempre, sem prazo, com a data e a hora bem
   visíveis. Esconder o dado depois de um prazo deixaria o morador sem nada justamente
