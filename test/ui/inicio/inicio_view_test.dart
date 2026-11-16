@@ -4,6 +4,8 @@
 // ETAPA VERMELHA: a tela ainda não recebe o ViewModel, então este teste nem
 // compila. Usa o InicioViewModel de verdade com os serviços mockados: a
 // tela é testada do jeito que o morador a vê, sem internet.
+// Passo 56: os testes de itens do fim da tela rolam até eles antes de
+// procurar, para não dependerem da altura da tela (o visual novo é mais alto).
 // =============================================================================
 import 'dart:async';
 
@@ -87,6 +89,18 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  // O ListView só monta o que está perto da tela: rola até o item antes de
+  // procurar. O ensureVisible termina de trazê-lo, para o toque acertar.
+  Future<void> rolarAte(WidgetTester tester, Finder alvo) async {
+    await tester.scrollUntilVisible(
+      alvo,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(alvo);
+    await tester.pump();
   }
 
   testWidgets('enquanto carrega, mostra o indicador de progresso', (
@@ -190,7 +204,7 @@ void main() {
   testWidgets('o botão da tábua de marés abre a tela da tábua', (tester) async {
     await abrirTela(tester);
 
-    await tester.ensureVisible(find.text('Ver tábua de marés'));
+    await rolarAte(tester, find.text('Ver tábua de marés'));
     await tester.tap(find.text('Ver tábua de marés'));
     await tester.pumpAndSettle();
 
@@ -202,6 +216,7 @@ void main() {
     tester,
   ) async {
     await abrirTela(tester);
+    await rolarAte(tester, find.text('Dados: Defesa Civil de Itajaí'));
 
     expect(find.text('Medido às 18:30 · consultado às 18:45'), findsOneWidget);
     expect(find.text('Dados: Defesa Civil de Itajaí'), findsOneWidget);
@@ -233,14 +248,12 @@ void main() {
     );
 
     await abrirTela(tester);
-
-    expect(
-      find.text(
+    const aviso =
         'A tábua deste mês ainda não foi publicada. '
-        'Mostrando a de 2026-10.',
-      ),
-      findsOneWidget,
-    );
+        'Mostrando a de 2026-10.';
+    await rolarAte(tester, find.text(aviso));
+
+    expect(find.text(aviso), findsOneWidget);
   });
 
   // No Android, "fechar" o app costuma só mandá-lo para o segundo plano:

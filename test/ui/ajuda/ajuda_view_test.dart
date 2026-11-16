@@ -133,13 +133,17 @@ void main() {
     }
 
     // O ListView só monta o que está visível: rola até o item antes de
-    // procurar, senão um "findsNothing" passaria sem provar nada.
+    // procurar, senão um "findsNothing" passaria sem provar nada. O
+    // ensureVisible termina de trazê-lo para a tela, para o toque acertar
+    // (igual ao grupo das orientações).
     Future<void> rolarAte(WidgetTester tester, Finder alvo) async {
       await tester.scrollUntilVisible(
         alvo,
         200,
         scrollable: find.byType(Scrollable),
       );
+      await tester.ensureVisible(alvo);
+      await tester.pump();
     }
 
     testWidgets('avisa que os abrigos abrem conforme a necessidade', (
