@@ -60,6 +60,10 @@ class AlertaCheiaApp extends StatelessWidget {
       title: 'Alerta Cheia Itajaí',
       debugShowCheckedModeBanner: false, // esconde a faixa "DEBUG" no canto
       theme: TemaApp.claro(),
+      // Passo 56: o modo escuro segue o celular (ThemeMode.system é o padrão
+      // do MaterialApp; fica escrito para deixar a escolha explícita).
+      darkTheme: TemaApp.escuro(),
+      themeMode: ThemeMode.system,
       home: NavegacaoPrincipal(
         inicioViewModel: inicioViewModel,
         ajustesViewModel: ajustesViewModel,

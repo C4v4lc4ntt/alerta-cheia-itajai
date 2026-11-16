@@ -7,6 +7,11 @@
 // número abre o discador. Se o discador não abrir, um aviso no topo mostra o
 // número para discar à mão. O aviso de "enchente sem chuva" sobe para o topo
 // a partir de Atenção.
+// Passo 56 (adendo da D20), ETAPA VERDE: os abrigos ganham um filtro por região
+// (mais "Animais") e as orientações ganham abas; cada um começa na primeira
+// opção. A escolha é só da tela, por isso fica no State e não no ViewModel.
+// REFATORAR (visual novo): cabeçalho azul e títulos "Ligue com um toque" e
+// "O que fazer" separando as partes da aba. O comportamento não muda.
 // =============================================================================
 import 'package:flutter/material.dart';
 
@@ -14,12 +19,14 @@ import '../../domain/models/abrigo.dart';
 import '../../domain/models/contato_emergencia.dart';
 import '../../domain/models/estagio_alerta.dart';
 import '../../domain/regras/aviso_enchente_sem_chuva.dart';
+import '../comum/cabecalho_app.dart';
 import 'ajuda_view_model.dart';
 import 'cartoes_ajuda.dart';
 import 'cartoes_orientacoes.dart';
+import 'filtro_de_opcoes.dart';
 
 /// Tela da aba "Ajuda".
-class AjudaView extends StatelessWidget {
+class AjudaView extends StatefulWidget {
   /// Cria a tela com o [viewModel] e os dados dos catálogos.
   const AjudaView({
     super.key,
@@ -51,17 +58,34 @@ class AjudaView extends StatelessWidget {
   final EstagioAlerta? estagioCidade;
 
   @override
+  State<AjudaView> createState() => _AjudaViewState();
+}
+
+/// Rótulo do filtro que mostra os abrigos para animais.
+const String _animais = 'Animais';
+
+class _AjudaViewState extends State<AjudaView> {
+  // Opções escolhidas no filtro e nas abas; null = a primeira de cada lista.
+  String? _regiaoEscolhida;
+  String? _secaoEscolhida;
+
+  @override
   Widget build(BuildContext context) {
+    final viewModel = widget.viewModel;
+    final regioes = [...widget.abrigos.keys, _animais];
+    final regiao = _regiaoEscolhida ?? regioes.first;
+    final secoes = widget.orientacoes.keys.toList();
+    final secao = _secaoEscolhida ?? (secoes.isEmpty ? null : secoes.first);
     // A Key fixa permite que os testes encontrem esta tela com find.byKey.
     return Scaffold(
       key: const Key('tela_ajuda'),
-      appBar: AppBar(title: const Text('Ajuda')),
+      appBar: const CabecalhoApp('Ajuda'),
       // ListenableBuilder redesenha a lista quando o ViewModel avisa.
       body: ListenableBuilder(
         listenable: viewModel,
         builder: (context, _) {
           final numero = viewModel.numeroParaDiscarAMao;
-          final estagio = estagioCidade;
+          final estagio = widget.estagioCidade;
           final destaque =
               estagio != null && avisoEnchenteSemChuvaEmDestaque(estagio);
           return ListView(
@@ -74,7 +98,8 @@ class AjudaView extends StatelessWidget {
                   key: Key('aviso_em_destaque'),
                   emDestaque: true,
                 ),
-              for (final contato in contatos)
+              const TituloSecao('Ligue com um toque'),
+              for (final contato in widget.contatos)
                 CartaoContato(
                   contato: contato,
                   aoLigar: () => viewModel.ligar(contato.numero),
@@ -85,16 +110,27 @@ class AjudaView extends StatelessWidget {
                 'Os abrigos abrem conforme a necessidade. '
                 'Confirme pelo 199 antes de ir.',
               ),
-              for (final regiao in abrigos.entries) ...[
-                TituloSecao(regiao.key),
-                for (final abrigo in regiao.value) _cartaoAbrigo(abrigo),
-              ],
-              const TituloSecao('Abrigos para animais'),
-              for (final abrigo in abrigosAnimais) _cartaoAbrigo(abrigo),
-              // RF06: orientações das fontes oficiais (D20).
-              for (final secao in orientacoes.entries) ...[
-                TituloSecao(secao.key),
-                CartaoOrientacoes(itens: secao.value),
+              // Filtro por região: só os abrigos da opção escolhida.
+              FiltroDeOpcoes(
+                opcoes: regioes,
+                escolhida: regiao,
+                aoEscolher: (opcao) => setState(() => _regiaoEscolhida = opcao),
+              ),
+              for (final abrigo
+                  in regiao == _animais
+                      ? widget.abrigosAnimais
+                      : widget.abrigos[regiao]!)
+                _cartaoAbrigo(abrigo),
+              // RF06: orientações das fontes oficiais (D20), uma aba por vez.
+              if (secao != null) ...[
+                const TituloSecao('O que fazer'),
+                FiltroDeOpcoes(
+                  opcoes: secoes,
+                  escolhida: secao,
+                  aoEscolher: (opcao) =>
+                      setState(() => _secaoEscolhida = opcao),
+                ),
+                CartaoOrientacoes(itens: widget.orientacoes[secao]!),
               ],
               if (!destaque) const AvisoEnchenteSemChuva(emDestaque: false),
               const SizedBox(height: 8),
@@ -117,7 +153,7 @@ class AjudaView extends StatelessWidget {
     final telefone = abrigo.telefone;
     return CartaoAbrigo(
       abrigo: abrigo,
-      aoLigar: telefone == null ? null : () => viewModel.ligar(telefone),
+      aoLigar: telefone == null ? null : () => widget.viewModel.ligar(telefone),
     );
   }
 }

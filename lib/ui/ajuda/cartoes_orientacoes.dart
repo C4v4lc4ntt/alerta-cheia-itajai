@@ -4,6 +4,8 @@
 // REFATORAR: separadas do cartoes_ajuda.dart depois dos ciclos 9 e 10, sem
 // mudar o comportamento, para cada arquivo ficar abaixo de ~200 linhas
 // (CLAUDE.md, seção 4).
+// Passo 56 (REFATORAR, visual novo): marcador de ✓ na cor principal no lugar
+// do "•" e aviso com cantos e espaçamento do tema. Textos não mudam.
 // =============================================================================
 import 'package:flutter/material.dart';
 
@@ -27,12 +29,21 @@ class CartaoOrientacoes extends StatelessWidget {
           children: [
             for (final item in itens)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // O marcador é só visual; o leitor de tela lê o item.
-                    const ExcludeSemantics(child: Text('•  ')),
+                    ExcludeSemantics(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 2, right: 10),
+                        child: Icon(
+                          Icons.check,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
                     Expanded(child: Text(item)),
                   ],
                 ),
