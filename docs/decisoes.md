@@ -493,3 +493,15 @@ fonte da situação dos abrigos e o caminho para o 199, o 193 e o 192 fica a um 
 números só com dígitos); discador falso nos testes do ViewModel e da tela; valores-
 limite da regra do aviso (Monitoramento → sem destaque; Atenção, Alerta e
 Emergência → em destaque).
+**Adendo (15/11/2026), filtro de abrigos e abas de orientações (passo 56):** no novo
+visual da aba Ajuda, os abrigos ganham um filtro com um botão por região (CRAS) e um
+"Animais"; o filtro começa na primeira região do catálogo (CRAS Espinheiros). As
+orientações ganham abas (Antes, Durante, Depois, Veículos e ruas alagadas) e abrem
+em "Antes". O aviso para confirmar pelo 199, o aviso de "enchente sem chuva" e os
+contatos continuam sempre visíveis. Os textos e os dados não mudam.
+**Por quê:** a aba ficou longa (34 abrigos e 4 seções); o filtro e as abas mostram
+menos de cada vez sem esconder o caminho para o 199, o 193 e o 192.
+**Testes:** de widget, escritos antes do código: o filtro começa na primeira região e
+esconde as outras; tocar numa região mostra só os abrigos dela; "Animais" mostra os
+abrigos para animais; as orientações abrem em "Antes"; cada aba mostra só os seus
+itens; alvos de 48 px e rótulos no filtro.
